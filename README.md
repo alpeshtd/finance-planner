@@ -9,7 +9,7 @@ This repo contains a **FastAPI backend** (`backend/`) and a **Vite + React front
 4. Railway will auto-detect:
    - `Procfile` → runs `uvicorn backend.app.main:app`
    - `requirements.txt` → installs dependencies (including `psycopg2-binary` for PostgreSQL)
-   - `runtime.txt` → Python version
+   - `runtime.txt` → Python 3.11 (Railway supports 3.8-3.11)
 5. Set environment variables in Railway dashboard:
    - `ALLOWED_ORIGINS` → your frontend URL (e.g. `https://your-frontend.vercel.app`)
    - Railway auto-sets `DATABASE_URL` for your PostgreSQL DB.
