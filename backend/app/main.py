@@ -11,8 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # Load environment variables from backend/.env (for local development)
 load_dotenv()
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Schema is now managed by Alembic migrations
+# Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Finance Planner API")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").strip()

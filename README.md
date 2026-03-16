@@ -2,18 +2,38 @@
 
 This repo contains a **FastAPI backend** (`backend/`) and a **Vite + React frontend** (`frontend/`).
 
-## ✅ Deploying the Backend on Railway.app
+## ✅ Deploying the Backend on Render (with Neon PostgreSQL)
 1. Push this repo to GitHub.
-2. In Railway.app, create a new project and connect your GitHub repo.
-3. Add a **PostgreSQL database** to your project (Railway provides this for free).
-4. Railway will auto-detect:
-   - `Procfile` → runs `uvicorn backend.app.main:app`
-   - `requirements.txt` → installs dependencies (including `psycopg2-binary` for PostgreSQL)
-   - `runtime.txt` → Python 3.11 (Railway supports 3.8-3.11)
-5. Set environment variables in Railway dashboard:
+2. In Render, create a new **Web Service** and connect your GitHub repo.
+3. Set the build command to:
+   - `pip install -r requirements.txt`
+   - (Render will run `uvicorn` via the `Procfile`)
+4. Add a **Neon PostgreSQL** database (Render has a Neon integration) and copy the provided connection string.
+5. In Render service settings, set these environment variables:
+   - `DATABASE_URL` → the Neon connection string
    - `ALLOWED_ORIGINS` → your frontend URL (e.g. `https://your-frontend.vercel.app`)
-   - Railway auto-sets `DATABASE_URL` for your PostgreSQL DB.
-6. Deploy! Railway will build and run your app.
+6. Deploy! Render will build and run your app according to `Procfile`.
+
+## ✅ Database migrations (production-safe)
+This project now uses **Alembic** for schema migrations.
+
+### Generate a new migration (local/dev)
+```bash
+alembic revision --autogenerate -m "Add my new table"
+```
+
+### Apply migrations (local/dev)
+```bash
+alembic upgrade head
+```
+
+### Apply migrations on Render
+Set Render’s **Start Command** to run migrations before the server:
+```bash
+alembic upgrade head && uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+```
+
+(This ensures your schema stays in sync with your code when you deploy.)
 
 ## 🚀 Running Locally
 ### Backend
@@ -32,8 +52,11 @@ npm install
 npm run dev
 ```
 
-## 🌐 Frontend Deployment
-Deploy the `frontend/` folder to a static host (Vercel / Netlify) and set `VITE_API_URL` to your Railway backend URL (e.g. `https://your-app.railway.app/api`).
+## 🌐 Frontend Deployment (Vercel)
+1. Deploy the `frontend/` folder to Vercel.
+2. Set an environment variable in Vercel:
+   - `VITE_API_URL` → your Render backend URL (e.g. `https://your-backend.onrender.com/api`).
+3. Deploy and confirm the frontend can reach the backend.
 
 ---
 
