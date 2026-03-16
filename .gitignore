@@ -3,12 +3,14 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.db
 venv/
 .venv/
 env/
 
 # Environment / IDE
 .env
+backend/.env
 
 # VS Code
 .vscode/
