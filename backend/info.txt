@@ -1,0 +1,8 @@
+Virtual env
+python -m venv venv
+venv\Scripts\activate           //cmd
+venv\Scripts\Activate.ps1       //powershell
+source venv/Scripts/activate    //git bash
+
+Start backend
+uvicorn app.main:app --reload
