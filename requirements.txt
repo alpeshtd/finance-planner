@@ -1,1 +1,6 @@
--r backend/requirements.txt
+fastapi[standard]
+sqlalchemy
+pydantic
+polars
+python-dotenv
+psycopg2-binary
