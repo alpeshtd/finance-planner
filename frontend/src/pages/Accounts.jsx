@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountService } from '../services/accountService';
 import AccountForm from '../components/AccountForm';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
@@ -11,6 +11,18 @@ export default function Accounts() {
   const loadData = async () => {
     const data = await accountService.getAll();
     setAccounts(data);
+  };
+
+  const handleDelete = async (accountId, accountName) => {
+    if (window.confirm(`Are you sure you want to delete "${accountName}"? This action cannot be undone.`)) {
+      try {
+        await accountService.delete(accountId);
+        loadData();
+      } catch (err) {
+        console.error('Failed to delete account', err);
+        alert('Failed to delete account');
+      }
+    }
   };
 
   useEffect(() => { loadData(); }, []);
@@ -46,12 +58,22 @@ export default function Accounts() {
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-gray-900">₹{parseFloat(acc.balance).toLocaleString('en-IN')}</p>
-              <button 
-                onClick={() => { setEditingAccount(acc); setShowForm(true); }}
-                className="text-[10px] text-blue-500 font-bold transition-opacity"
-              >
-                <Pencil size={14} />
-              </button>
+              <div className="flex gap-2 justify-end mt-2">
+                <button 
+                  onClick={() => { setEditingAccount(acc); setShowForm(true); }}
+                  className="text-blue-500 hover:text-blue-700 transition-colors"
+                  title="Edit"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button 
+                  onClick={() => handleDelete(acc.id, acc.name)}
+                  className="text-red-500 hover:text-red-700 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           </div>
         ))}

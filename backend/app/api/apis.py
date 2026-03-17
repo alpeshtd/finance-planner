@@ -69,6 +69,16 @@ def update_account(account_id: int, account: schemas.AccountCreate, db: Session 
     db.refresh(db_account)
     return db_account
 
+@router.delete("/accounts/{account_id}")
+def delete_account(account_id: int, db: Session = Depends(get_db)):
+    db_account = db.query(models.Account).filter(models.Account.id == account_id).first()
+    if not db_account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    db.delete(db_account)
+    db.commit()
+    return {"message": "Account deleted successfully"}
+
 @router.post("/categories/")
 def create_category(category: schemas.CategoryCreate, db: Session = Depends(get_db)):
     db_cat = models.Category(**category.dict())
