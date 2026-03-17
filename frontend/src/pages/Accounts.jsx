@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { accountService } from '../services/accountService';
 import AccountForm from '../components/AccountForm';
+import { Pencil } from 'lucide-react';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
@@ -47,9 +48,9 @@ export default function Accounts() {
               <p className="text-lg font-bold text-gray-900">₹{parseFloat(acc.balance).toLocaleString('en-IN')}</p>
               <button 
                 onClick={() => { setEditingAccount(acc); setShowForm(true); }}
-                className="text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-[10px] text-blue-500 font-bold transition-opacity"
               >
-                EDIT
+                <Pencil size={14} />
               </button>
             </div>
           </div>

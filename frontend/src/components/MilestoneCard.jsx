@@ -1,3 +1,5 @@
+import { Target } from 'lucide-react';
+
 export function MilestoneCard({ m }) {
   return (
     <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm relative overflow-hidden group">
@@ -8,7 +10,7 @@ export function MilestoneCard({ m }) {
       <div className="flex justify-between items-start relative">
         <div>
           <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Active Strategy</span>
-          <h3 className="text-2xl font-black tesxt-gray-900 mt-1">{m.name}</h3>
+          <h3 className="text-2xl font-black text-gray-900 mt-1">{m.name}</h3>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-black text-gray-400 uppercase">Gap</p>

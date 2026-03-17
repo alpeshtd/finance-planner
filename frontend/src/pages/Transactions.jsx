@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { transactionService } from '../services/transactionService';
 import TransactionForm from '../components/TransactionForm'; // Import your new form
 import DateFilter from '../components/DateFilter';
+import { Trash2 } from 'lucide-react';
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -76,9 +77,9 @@ export default function Transactions() {
                 </span>
                 <button 
                   onClick={() => handleDeleteClick(t)}
-                  className="text-xs text-blue-400 opacity-0 group-hover:opacity-100 font-bold"
+                  className="text-xs text-blue-400 font-bold"
                 >
-                  Delete
+                  <Trash2 size={14} color="salmon" />
                 </button>
                 </div>
               </div>

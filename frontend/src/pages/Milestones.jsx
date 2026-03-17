@@ -16,7 +16,17 @@ export default function Milestones() {
         ]);
         setMilestones(mRes.data);
         setCategories(cRes.data);
-        setIsFormOpen(false); // Close form after successful add
+    };
+
+    const createMilestone = async (milestone) => {
+        await api.post('/milestones', {
+            name: milestone.name,
+            target_amount: Number(milestone.target),
+            deadline: milestone.deadline,
+            category_id: Number(milestone.cat_id),
+        });
+        await fetchData();
+        setIsFormOpen(false);
     };
 
     useEffect(() => { fetchData(); }, []);
@@ -46,7 +56,7 @@ export default function Milestones() {
                             Link milestones to specific categories like "Investments" to automate progress tracking.
                         </p>
                     </div>
-                    <MilestoneForm categories={categories} onAdd={fetchData} />
+                    <MilestoneForm categories={categories} onAdd={createMilestone} />
                 </div>
             )}
 

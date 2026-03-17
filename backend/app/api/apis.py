@@ -441,11 +441,19 @@ def get_dynamic_insights(db: Session = Depends(get_db)):
         "vibe_score": "Good" if daily_burn < 3000 else "Aggressive" # Dynamic status
     }
 
-@router.post("/milestones")
-def create_milestone(name: str, target: float, deadline: date, cat_id: int, db: Session = Depends(get_db)):
-    new_m = models.Milestone(name=name, target_amount=target, deadline=deadline, category_id=cat_id)
+@router.post("/milestones", response_model=schemas.Milestone)
+def create_milestone(milestone: schemas.MilestoneCreate, db: Session = Depends(get_db)):
+    # FastAPI will validate the JSON body against MilestoneCreate
+    print(f"Creating milestone: {milestone}")
+    new_m = models.Milestone(
+        name=milestone.name,
+        target_amount=milestone.target_amount,
+        deadline=milestone.deadline,
+        category_id=milestone.category_id,
+    )
     db.add(new_m)
     db.commit()
+    db.refresh(new_m)
     return new_m
 
 @router.get("/milestones/status")

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import CategoryForm from '../components/CategoryForm';
 import { categoryService } from '../services/catServices';
+import { Pencil } from 'lucide-react';
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
@@ -43,8 +44,8 @@ export default function Categories() {
           </span>
           
           {/* Action Buttons (Hidden until hover) */}
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => onEdit(category)} className="text-[10px] text-blue-500 font-bold hover:underline">EDIT</button>
+          <div className="flex items-center gap-2 transition-opacity">
+            <button onClick={() => onEdit(category)} className="text-[10px] text-blue-500 font-bold hover:underline"><Pencil size={14} /></button>
           </div>
         </div>
 
