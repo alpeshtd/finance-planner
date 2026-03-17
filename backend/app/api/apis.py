@@ -489,3 +489,12 @@ def get_milestones_status(db: Session = Depends(get_db)):
             "days_left": days_left
         })
     return results
+
+@router.delete("/milestones/{milestone_id}")
+def delete_milestone(milestone_id: int, db: Session = Depends(get_db)):
+    milestone = db.query(models.Milestone).filter(models.Milestone.id == milestone_id).first()
+    if not milestone:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    db.delete(milestone)
+    db.commit()
+    return {"message": "Milestone deleted successfully"}

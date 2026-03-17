@@ -3,6 +3,7 @@ import MilestoneForm from '../components/MilestoneForm';
 import { MilestoneCard } from '../components/MilestoneCard';
 import { Plus, Target } from 'lucide-react';
 import api from '../services/api';
+import { milestoneService } from '../services/milestoneService';
 
 export default function Milestones() {
     const [milestones, setMilestones] = useState([]);
@@ -27,6 +28,18 @@ export default function Milestones() {
         });
         await fetchData();
         setIsFormOpen(false);
+    };
+
+    const handleDeleteMilestone = async (milestoneId, milestoneName) => {
+        if (window.confirm(`Are you sure you want to delete "${milestoneName}"? This action cannot be undone.`)) {
+            try {
+                await milestoneService.delete(milestoneId);
+                await fetchData();
+            } catch (err) {
+                console.error('Failed to delete milestone', err);
+                alert('Failed to delete milestone');
+            }
+        }
     };
 
     useEffect(() => { fetchData(); }, []);
@@ -63,7 +76,7 @@ export default function Milestones() {
             {/* Data List */}
             <div className="grid grid-cols-1 gap-6">
                 {milestones.length > 0 ? (
-                    milestones.map(m => <MilestoneCard key={m.id} m={m} isFullWidth />)
+                    milestones.map(m => <MilestoneCard key={m.id} m={m} onDelete={handleDeleteMilestone} isFullWidth />)
                 ) : (
                     <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
                         <Target className="mx-auto text-gray-300 mb-4" size={48} />
