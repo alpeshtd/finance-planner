@@ -56,7 +56,8 @@ npm run dev
 1. Deploy the `frontend/` folder to Vercel.
 2. Set an environment variable in Vercel:
    - `VITE_API_URL` → your Render backend URL (e.g. `https://your-backend.onrender.com/api`).
-3. Deploy and confirm the frontend can reach the backend.
+3. The `vercel.json` file handles SPA routing (refreshes/scrolls won't 404).
+4. Deploy and confirm the frontend can reach the backend.
 
 ---
 
