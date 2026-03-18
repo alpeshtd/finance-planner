@@ -15,7 +15,7 @@ export default function Dashboard() {
   if (!insights) return <div className="p-10 text-center font-black animate-pulse text-gray-400 uppercase tracking-widest">Scanning Wealth Engine...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
 
       {/* Dynamic Header with Vibe Check */}
       <header className="flex justify-between items-end">

@@ -13,6 +13,7 @@ import Users from './pages/Users.jsx';
 import Emergency from './pages/Emergency.jsx';
 import Budget from './pages/Budget.jsx';
 import Milestones from './pages/Milestones.jsx';
+import Utility from './pages/Utility.jsx';
 
 const router = createBrowserRouter([
   {
@@ -27,6 +28,7 @@ const router = createBrowserRouter([
       { path: "categories", element: <Categories /> },
       { path: "emergency", element: <Emergency /> },
       { path: "users", element: <Users /> },
+      { path: "utility", element: <Utility /> },
     ],
   },
 ]);

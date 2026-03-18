@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+import io
+import re
+import pdfplumber
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, text # Added these
 from ..db.database import SessionLocal
@@ -163,6 +166,56 @@ def create_transaction(transaction: schemas.TransactionCreate, db: Session = Dep
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
+
+@router.post("/transactions/bulk")
+def create_transactions_bulk(data: schemas.TransactionBulkCreate, db: Session = Depends(get_db)):
+
+    created = []
+    skipped = []
+
+    for transaction in data.transactions:
+
+        # 🔒 Dedup check
+        # if transaction.external_id:
+        # if transaction:
+        #     existing = db.query(models.Transaction).filter(
+        #         "{models.Transaction.type}_{models.Transaction.date}_{models.Transaction.amount}_"  == transaction.external_id,
+        #         models.Transaction.user_id == transaction.user_id
+        #     ).first()
+
+        #     if existing:
+        #         skipped.append(transaction.external_id)
+        #         continue
+
+        db_transaction = models.Transaction(**transaction.dict())
+
+        # 💰 Balance logic
+        if transaction.type == models.TransactionType.EXPENSE:
+            account = db.query(models.Account).filter(models.Account.id == transaction.from_account_id).first()
+            if account:
+                account.balance -= transaction.amount
+
+        elif transaction.type == models.TransactionType.INCOME:
+            account = db.query(models.Account).filter(models.Account.id == transaction.to_account_id).first()
+            if account:
+                account.balance += transaction.amount
+
+        elif transaction.type == models.TransactionType.TRANSFER:
+            from_acc = db.query(models.Account).filter(models.Account.id == transaction.from_account_id).first()
+            to_acc = db.query(models.Account).filter(models.Account.id == transaction.to_account_id).first()
+            if from_acc and to_acc:
+                from_acc.balance -= transaction.amount
+                to_acc.balance += transaction.amount
+
+        db.add(db_transaction)
+        created.append(db_transaction)
+
+    db.commit()
+
+    return {
+        "created_count": len(created),
+        "created": created
+    }
 
 # @router.get("/transactions/")
 # def get_transactions(user_id: Optional[int] = None, db: Session = Depends(get_db)):
@@ -498,3 +551,176 @@ def delete_milestone(milestone_id: int, db: Session = Depends(get_db)):
     db.delete(milestone)
     db.commit()
     return {"message": "Milestone deleted successfully"}
+
+# ----------- HELPERS -----------
+
+def is_valid_date(text):
+    return bool(re.match(r"\d{2}\.\d{2}\.\d{4}", text))
+
+def parse_amount(prev_balance, current_balance, withdrawal, deposit):
+    # ✅ First transaction → use extracted values
+    if prev_balance is None:
+        if withdrawal:
+            return -float(withdrawal.replace(",", ""))
+        elif deposit:
+            return float(deposit.replace(",", ""))
+        return 0.0
+
+    # ✅ बाकी transactions → use balance diff (most accurate)
+    return round(current_balance - prev_balance, 2)
+
+
+def categorize(desc):
+    desc = desc.lower()
+
+    if "upi" in desc:
+        return "UPI"
+    if "amazon" in desc or "flipkart" in desc or "meesho" in desc:
+        return "Shopping"
+    if "swiggy" in desc or "zomato" in desc or "food" in desc:
+        return "Food"
+    if "petrol" in desc or "fuel" in desc:
+        return "Fuel"
+    if "netflix" in desc or "spotify" in desc:
+        return "Subscription"
+    if "atm" in desc or "cash wdl" in desc:
+        return "Cash Withdrawal"
+    if "loan" in desc or "emi" in desc:
+        return "Loan/EMI"
+    if "salary" in desc:
+        return "Income"
+    if "zerodha" in desc:
+        return "Investment"
+
+    return "Others"
+
+
+def clean_text(text):
+    if not text:
+        return ""
+    return " ".join(text.split())  # remove line breaks
+
+
+# ----------- CORE PARSER -----------
+
+def extract_amounts(parts):
+    numbers = []
+
+    for p in parts:
+        if re.match(r"^\d+(\.\d{1,2})?$", p):
+            numbers.append(p)
+    
+    if not numbers:
+        return "", "", 0.0
+
+    balance = float(numbers[-1])
+
+    withdrawal = ""
+    deposit = ""
+
+    if len(numbers) == 2:
+        # Only one amount + balance (we will decide later using balance diff)
+        withdrawal = numbers[0]
+
+    elif len(numbers) >= 3:
+        # ✅ Correct order for ICICI
+        withdrawal = numbers[-2]
+        deposit = numbers[-2]
+
+    return withdrawal, deposit, balance
+
+def parse_transactions(pdf_stream):
+    transactions = []
+
+    with pdfplumber.open(pdf_stream) as pdf:
+        prev_balance = None  # ✅ track previous balance
+
+        for page in pdf.pages:
+            words = page.extract_text()
+
+            if not words:
+                continue
+
+            lines = words.split("\n")
+
+            current = None
+
+            for line in lines:
+                parts = line.split()
+                # 🚀 Detect start of transaction
+                if len(parts) >= 3 and parts[0].isdigit() and is_valid_date(parts[1]):
+
+                    if current:
+                        transactions.append(current)
+
+                    date = parts[1]
+
+                    withdrawal, deposit, balance = extract_amounts(parts)
+                    # print(parts)
+
+                    description = " ".join(parts[2:])
+                    # print(description)
+                    # description = re.sub(r"\d+(\.\d{1,2})?$", "", description).strip()
+
+                    current = {
+                        "date": date,
+                        "description": clean_text(description),
+                        "amount": 0.0,  # temp
+                        "balance": balance,
+                        "category": categorize(description),
+                    }
+
+                    # ✅ FIX: correct signed amount using balance diff
+                    current["amount"] = parse_amount(
+                        prev_balance,
+                        balance,
+                        withdrawal,
+                        deposit
+                    )
+                    prev_balance = balance  # update for next txn
+
+                else:
+                    if current:
+                        current["description"] += " " + clean_text(line)
+
+            if current:
+                transactions.append(current)
+
+    return transactions
+
+def generate_summary(transactions):
+    summary = {}
+
+    for t in transactions:
+        cat = t.get("category", "Others")
+        amt = t.get("amount") or 0
+
+        if cat not in summary:
+            summary[cat] = 0
+
+        summary[cat] += amt
+
+    return summary
+
+# ----------- API -----------
+
+@router.post("/read-statement")
+async def upload_pdf(file: UploadFile = File(...)):
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF allowed")
+
+    contents = await file.read()
+
+    pdf_stream = io.BytesIO(contents)
+
+    transactions = parse_transactions(pdf_stream)
+
+    if not transactions:
+        return {"success": False, "message": "No transactions found"}
+
+    return {
+        "success": True,
+        "count": len(transactions),
+        "transactions": transactions,
+        "summary": generate_summary(transactions)
+    }

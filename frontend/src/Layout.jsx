@@ -35,6 +35,7 @@ export default function Layout() {
           <Link to="/accounts" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Accounts</Link>
           <Link to="/milestones" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Milestones</Link>
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
+          <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
         </div>
       </nav>
 

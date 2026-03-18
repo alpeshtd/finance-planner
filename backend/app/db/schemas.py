@@ -69,6 +69,9 @@ class TransactionCreate(BaseModel):
     to_account_id: Optional[int] = None
     note: Optional[str] = None
 
+class TransactionBulkCreate(BaseModel):
+    transactions: List[TransactionCreate]
+
 class MilestoneBase(BaseModel):
     name: str
     target_amount: float

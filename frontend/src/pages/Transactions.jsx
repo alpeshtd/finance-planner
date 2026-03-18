@@ -68,7 +68,7 @@ export default function Transactions() {
             {transactions.map((t) => (
               <div key={t.id} className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors group">
                 <div className="flex flex-col">
-                  <span className="font-medium text-gray-900">{t.note || 'Untitled Transaction'}</span>
+                  <span className="font-medium text-gray-900" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '20ch'}}>{t.note || 'Untitled Transaction'}</span>
                   <span className="text-xs text-gray-400">{t.date} • {t.type}</span>
                 </div>
                 <div className="flex items-center gap-4">
