@@ -3,6 +3,7 @@ import { transactionService } from '../services/transactionService';
 import { userService } from '../services/userService';
 import { accountService } from '../services/accountService';
 import { categoryService } from '../services/catServices';
+import { CategoryDropdown } from './CategoryDropdown';
 
 export default function TransactionForm({ onTransactionAdded, onClose }) {
   const [type, setType] = useState('EXPENSE');
@@ -136,13 +137,7 @@ export default function TransactionForm({ onTransactionAdded, onClose }) {
           )}
 
           {(type === 'EXPENSE' || type === 'TRANSFER') && (
-            <select 
-              className="w-full p-3 border rounded-xl"
-              onChange={(e) => setFormData({...formData, category_id: e.target.value})}
-            >
-              <option value="">Category</option>
-              {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-            </select>
+            <CategoryDropdown categories={categories} value={formData.category_id} onChange={(value) => setFormData({...formData, category_id: value})} />
           )}
 
           <input 

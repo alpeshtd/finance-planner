@@ -5,6 +5,7 @@ import { accountService } from "../services/accountService";
 import { categoryService } from "../services/catServices";
 import { transactionService } from "../services/transactionService";
 import { Check } from "lucide-react";
+import { CategoryDropdown } from "../components/CategoryDropdown";
 
 export default function Utility() {
     const [file, setFile] = useState(null);
@@ -223,18 +224,11 @@ export default function Utility() {
                                         <option value="EXPENSE">EXPENSE</option>
                                         <option value="TRANSFER">TRANSFER</option>
                                     </select>
-                                    <select
-                                        className="w-full p-1 border rounded-xl"
-                                        onChange={(e) => {
-                                            const newTransactions = [...transactions];
-                                            newTransactions[index].category_id = +e.target.value;
+                                    <CategoryDropdown value={transactions[index].category_id} categories={categories} onChange={(value) => {
+                                        const newTransactions = [...transactions];
+                                            newTransactions[index].category_id = +value;
                                             setTransactions(newTransactions);
-                                        }}
-                                        required
-                                    >
-                                        <option value="">Category</option>
-                                        {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                                    </select>
+                                    }} />
                                 </div>
                                 <div className="flex justify-between items-center">
                                     {txn.type === 'TRANSFER' && (

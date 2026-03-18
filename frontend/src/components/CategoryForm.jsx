@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { categoryService } from '../services/catServices';
+import { CategoryDropdown } from './CategoryDropdown';
 
 export default function CategoryForm({ onCategoryAdded, onClose, editingCategory = null }) {
     // 1. Define the state for categories
@@ -55,18 +56,17 @@ export default function CategoryForm({ onCategoryAdded, onClose, editingCategory
             onChange={(e) => setFormData({...formData, name: e.target.value})}
             required 
           />
-
-          <select 
+          <CategoryDropdown categories={categories} value={formData.parent_id} onChange={(value) => setFormData({...formData, parent_id: value})} />
+          {/* <select 
             className="w-full p-3 border rounded-xl bg-gray-50"
             value={formData.parent_id}
             onChange={(e) => setFormData({...formData, parent_id: e.target.value})}
           >
             <option value="">No Parent (Main Category)</option>
-            {/* 3. Now 'categories' is defined and can be mapped */}
             {categories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
-          </select>
+          </select> */}
 
           <input 
             type="number" 
