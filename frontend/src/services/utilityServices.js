@@ -13,4 +13,8 @@ export const utilityServices = {
         });
         return response.data;
     },
+    refreshBe: async (accountData) => {
+        const response = await api.get('/health/');
+        return response.data;
+    }
 };

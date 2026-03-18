@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
+import { utilityServices } from './services/utilityServices';
 
 export default function Layout() {
   // 1. Create the 'switch' (state)
@@ -7,6 +8,16 @@ export default function Layout() {
 
   // Helper function to close menu when a link is clicked
   const closeMenu = () => setIsMenuOpen(false);
+
+  const refreshClickHandle = async () => {
+    try {
+      const data = await utilityServices.refreshBe()
+      alert(data.status)
+    } catch(error) {
+      alert('Health Error');
+      console.error("Failed to fetch transactions:", error);
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden">
@@ -36,6 +47,7 @@ export default function Layout() {
           <Link to="/milestones" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Milestones</Link>
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
           <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
+          <button className="" onClick={refreshClickHandle}>Refresh BE</button>
         </div>
       </nav>
 

@@ -19,6 +19,12 @@ def get_db():
     finally:
         db.close()
 
+@router.get("/health")
+def check_health():
+    return {
+        'status': 'alive'
+    }
+
 @router.get("/metadata/enums")
 def get_enums():
     return {
