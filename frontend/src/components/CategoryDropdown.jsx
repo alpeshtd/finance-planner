@@ -1,6 +1,5 @@
 export function CategoryDropdown({ categories = [], onChange, value }) {
     // Filter to show only top-level categories in the main list
-    console.log(categories)
     const parentCategories = categories.filter(c => !c.parent_id);
 
     const CategoryOption = ({ category, allCategories, depth = 0 }) => {

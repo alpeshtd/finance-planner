@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { budgetService } from '../services/budgetService';
-import { Target, Wallet, TrendingUp, ChevronRight, ArrowUpRight } from 'lucide-react';
+import { Target, Wallet, TrendingUp, ChevronRight, ArrowUpRight, HandCoins, Split } from 'lucide-react';
 import DateFilter from '../components/DateFilter';
 
 function CategoryRow({ category, level = 0 }) {
@@ -75,6 +75,23 @@ export default function Budget() {
                     <span className="text-2xl font-black text-emerald-600">₹{data.monthly_income.toLocaleString()}</span>
                 </div>
             </header>
+
+            <div className='bg-white p-4 rounded-[1rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow'>
+                <div className="flex justify-between items-center">
+                    <div className='flex items-center gap-3'>
+                        <HandCoins size={20} className="text-yellow-500" />
+                        <h2 className='text-lg font-bold'>Expenses</h2>
+                    </div>
+                    <span className="text-lg font-bold text-gray-800">₹{data.monthly_expense.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <div className='flex items-center gap-3'>
+                        <Split size={20} className="text-blue-500" />
+                        <h2 className='text-lg font-bold'>Transfers</h2>
+                    </div>
+                    <span className="text-lg font-bold text-gray-800">₹{data.monthly_transfer.toLocaleString()}</span>
+                </div>
+            </div>
 
             {/* --- GAP ANALYSIS: THE INVESTMENT VELOCITY --- */}
             <div className="bg-gray-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
@@ -152,7 +169,7 @@ export default function Budget() {
                                     {rootBucket.name} Strategy
                                 </span>
                             </div>
-                            <div style={{ maxWidth: '81vw', overflow: 'auto'}}>
+                            <div style={{ maxWidth: '81vw', overflow: 'auto' }}>
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="text-[10px] font-black text-gray-400 uppercase border-b border-gray-50">

@@ -376,11 +376,25 @@ def get_budget_dashboard(
         *date_criteria  # This unpacks either the range or the month/year
     ).scalar() or 0
 
+    monthly_expense = db.query(func.sum(models.Transaction.amount)).join(
+        models.Category, models.Transaction.category_id == models.Category.id
+    ).filter(
+        models.Transaction.type == models.TransactionType.EXPENSE,
+        *date_criteria
+    ).scalar() or 0
+
+    monthly_transfer = db.query(func.sum(models.Transaction.amount)).filter(
+        models.Transaction.type == models.TransactionType.TRANSFER,
+        *date_criteria
+    ).scalar() or 0
+
     roots = db.query(models.Category).filter(models.Category.parent_id == None).all()
     
     # Update get_category_node to accept the date_criteria list
     return {
         "monthly_income": float(monthly_income),
+        "monthly_expense": float(monthly_expense),
+        "monthly_transfer": float(monthly_transfer),
         "buckets": [
             get_category_node(root, date_criteria, db, float(monthly_income)) 
             for root in roots

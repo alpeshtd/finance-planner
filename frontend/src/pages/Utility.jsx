@@ -234,7 +234,12 @@ export default function Utility() {
                                     {txn.type === 'TRANSFER' && (
                                         <select
                                             className="w-full p-1 mt-1 border rounded-xl"
-                                            onChange={(e) => setFormData({ ...formData, to_account_id: e.target.value })}
+                                            onChange={(e) => {
+                                                const newTransactions = [...transactions];
+                                                newTransactions[index].to_account_id = e.target.value;
+                                                setTransactions(newTransactions);
+                                            }}
+                                            value={txn.to_account_id || ''}
                                         >
                                             <option value="">To Account</option>
                                             {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
