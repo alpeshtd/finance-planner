@@ -343,7 +343,8 @@ def get_category_node(category, date_criteria, db: Session, base_amount: float):
         "name": category.name,
         "target_amount": float(current_target),
         "covered_amount": float(total_spent),
-        "sub_categories": sub_categories
+        "sub_categories": sub_categories,
+        "percentage": int(category.percentage or 0)
     }
 
 @router.get("/budget/summary")

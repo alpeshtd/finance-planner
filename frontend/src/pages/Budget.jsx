@@ -9,21 +9,21 @@ function CategoryRow({ category, level = 0 }) {
     return (
         <>
             <tr className="hover:bg-gray-50 transition-colors border-b border-gray-50">
-                <td className="px-10 py-4">
+                <td className="px-3 py-2">
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
                         {level > 0 && <ChevronRight size={12} className="text-gray-300" />}
                         <span className={`text-sm ${level === 0 ? 'font-black text-gray-900' : 'font-bold text-gray-600'}`}>
-                            {category.name}
+                            {category.name} ({category.percentage}%)
                         </span>
                     </div>
                 </td>
-                <td className="px-6 py-4 text-[10px] font-black text-gray-400">
+                <td className="px-3 py-2 text-[10px] font-black text-gray-400">
                     {category.percentage}%
                 </td>
-                <td className="px-6 py-4 text-right text-sm font-medium text-gray-400 font-mono">
+                <td className="px-3 py-2 text-right text-sm font-medium text-gray-400 font-mono">
                     ₹{category.target_amount.toLocaleString()}
                 </td>
-                <td className="px-10 py-4 text-right">
+                <td className="px-3 py-2 text-right">
                     <span className="text-sm font-black text-gray-900 font-mono">
                         ₹{category.covered_amount.toLocaleString()}
                     </span>
@@ -163,20 +163,20 @@ export default function Budget() {
                 <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Channel Breakdown</h3>
                 <div className="space-y-8">
                     {data.buckets.map(rootBucket => (
-                        <div key={rootBucket.id} className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="p-6 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center px-10">
+                        <div key={rootBucket.id} className="bg-white rounded-[1rem] border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="p-3 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center px-3">
                                 <span className="font-black text-gray-800 uppercase text-xs tracking-widest">
                                     {rootBucket.name} Strategy
                                 </span>
                             </div>
-                            <div style={{ maxWidth: '81vw', overflow: 'auto' }}>
+                            <div style={{ maxWidth: '90vw', overflow: 'auto' }}>
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="text-[10px] font-black text-gray-400 uppercase border-b border-gray-50">
-                                            <th className="px-10 py-4">Category Tree</th>
-                                            <th className="px-6 py-4">Target %</th>
-                                            <th className="px-6 py-4 text-right">Target Amount</th>
-                                            <th className="px-10 py-4 text-right">Covered</th>
+                                            <th className="px-3 py-2">Category Tree</th>
+                                            <th className="px-3 py-2">Target %</th>
+                                            <th className="px-3 py-2 text-right">Target Amount</th>
+                                            <th className="px-3 py-2 text-right">Covered</th>
                                         </tr>
                                     </thead>
                                     <tbody>

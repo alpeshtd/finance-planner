@@ -3,20 +3,50 @@ import { transactionService } from '../services/transactionService';
 import TransactionForm from '../components/TransactionForm'; // Import your new form
 import DateFilter from '../components/DateFilter';
 import { Trash2 } from 'lucide-react';
+import { userService } from '../services/userService';
+import { accountService } from '../services/accountService';
+import { categoryService } from '../services/catServices';
+
+const TransactionCss = {
+  "EXPENSE": "text-red-500",
+  "INCOME": "text-green-600",
+  "TRANSFER": "text-blue-500"
+}
 
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ 
-    month: new Date().getMonth() + 1, 
-    year: new Date().getFullYear() 
+  const [users, setUsers] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
   });
+
+  useEffect(() => {
+    // Fetch all required data for the dropdowns
+    Promise.all([
+      userService.getAll(),
+      accountService.getAll(),
+      categoryService.getAll()
+    ]).then(([userData, accountData, catData]) => {
+      setUsers(userData);
+      setAccounts(accountData);
+      setCategories(catData);
+
+      // Default to first user if available
+      if (userData.length > 0) {
+        setFormData(prev => ({ ...prev, user_id: userData[0].id }));
+      }
+    });
+  }, []);
 
   // Function to fetch data - we'll call this on mount AND after a new transaction is added
   const loadData = async () => {
     try {
-      const data = await transactionService.getAll({...filters}); // User ID 1
+      const data = await transactionService.getAll({ ...filters }); // User ID 1
       setTransactions(data);
     } catch (error) {
       console.error("Failed to fetch transactions:", error);
@@ -51,7 +81,7 @@ export default function Transactions() {
           <h1 className="text-2xl font-bold text-gray-800">Transactions</h1>
           <p className="text-gray-500 text-sm">Monitor your 50/30/20 cash flow</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowForm(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center gap-2"
         >
@@ -68,19 +98,19 @@ export default function Transactions() {
             {transactions.map((t) => (
               <div key={t.id} className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors group">
                 <div className="flex flex-col">
-                  <span className="font-medium text-gray-900" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '20ch'}}>{t.note || 'Untitled Transaction'}</span>
-                  <span className="text-xs text-gray-400">{t.date} • {t.type}</span>
+                  <span className="font-medium text-gray-900" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '20ch' }}>{t.note || 'Untitled Transaction'}</span>
+                  <span className="text-xs text-gray-400">{t.date} • {users.find(u => u.id === t.user_id)?.name || 'Unknown'} • {categories.find(c => c.id === t.category_id)?.name || (t.type === 'INCOME' ? '' : 'Unknown')}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                <span className={`font-bold ${t.type === 'EXPENSE' ? 'text-red-500' : 'text-green-600'}`}>
-                  {t.type === 'EXPENSE' ? '-' : '+'} ₹{t.amount.toLocaleString()}
-                </span>
-                <button 
-                  onClick={() => handleDeleteClick(t)}
-                  className="text-xs text-blue-400 font-bold"
-                >
-                  <Trash2 size={14} color="salmon" />
-                </button>
+                  <span className={`font-bold ${TransactionCss[t.type]}`}>
+                    {t.type === 'EXPENSE' ? '-' : '+'} ₹{t.amount.toLocaleString()}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteClick(t)}
+                    className="text-xs text-blue-400 font-bold"
+                  >
+                    <Trash2 size={14} color="salmon" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -94,12 +124,12 @@ export default function Transactions() {
 
       {/* 2. The Pop-up (Modal) */}
       {showForm && (
-        <TransactionForm 
-          onClose={() => setShowForm(false)} 
+        <TransactionForm
+          onClose={() => setShowForm(false)}
           onTransactionAdded={() => {
             loadData(); // Refresh the list automatically
             setShowForm(false);
-          }} 
+          }}
         />
       )}
     </div>
