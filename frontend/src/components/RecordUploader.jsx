@@ -11,7 +11,8 @@ const ReportUploader = ({ onClose }) => {
         report_date: new Date().toISOString().split('T')[0],
         tags: '',
         doctor_name: '',
-        is_critical: false
+        is_critical: false,
+        crop_pages: ''
     });
 
     const handleFileChange = (event) => {
@@ -30,6 +31,7 @@ const ReportUploader = ({ onClose }) => {
         formData.append('tags', reportData.tags);
         formData.append('doctor_name', reportData.doctor_name);
         formData.append('is_critical', reportData.is_critical);
+        formData.append('crop_pages', reportData.crop_pages);
 
         try {
             const response = await healthCareServices.uploadReport(formData);
@@ -48,7 +50,7 @@ const ReportUploader = ({ onClose }) => {
                     <h2 className="text-xl font-bold">Add New Medical Report</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
                 </div>
-                <div style={{ padding: '20px', textAlign: 'center' }}>
+                <div className='flex flex-col justify-center items-center gap-2'>
                     <input
                         type="file"
                         accept="image/*,application/pdf"
@@ -60,6 +62,13 @@ const ReportUploader = ({ onClose }) => {
                     <label htmlFor="file-input" style={buttonStyle}>
                         {selectedFile ? "Change File" : "📸 Take Photo / Select File"}
                     </label>
+                    <input
+                        type="text"
+                        placeholder="Crop Pages (e.g., 0-3)"
+                        className="w-full p-3 border rounded-xl"
+                        value={reportData.crop_pages}
+                        onChange={(e) => setReportData({ ...reportData, crop_pages: e.target.value })}
+                    />
                     <input
                         type="text"
                         placeholder="Patient Name"

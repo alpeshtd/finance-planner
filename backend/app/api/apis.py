@@ -752,6 +752,7 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 
 import cloudinary.uploader
+from PyPDF2 import PdfReader, PdfWriter
 
 @router.post("/upload-medical")
 async def upload_medical_report(
@@ -761,9 +762,32 @@ async def upload_medical_report(
     report_date: str = Form(...),
     tags: str = Form(None),                          # Form(None) makes it optional
     doctor_name: str = Form(None),
-    is_critical: str = Form("false"),                # Forms send booleans as strings
+    is_critical: str = Form("false"),               # Forms send booleans as strings
+    crop_pages: str = Form(None),                    # Optional, default to None
     db: Session = Depends(get_db)                    # Don't forget your DB session!
 ):
+    if crop_pages is not None:
+        try:
+            start_page, end_page = map(int, crop_pages.split('-'))
+        except ValueError:
+            raise ValueError("Invalid page range format. Use 'start-end' (e.g., '1-3')")
+    else:
+        start_page = 0
+        end_page = None
+
+    if end_page is not None and end_page >= start_page:
+        # Read the PDF and extract the specified page range before uploading
+        reader = PdfReader(file.file)  # Use file.file to get the actual file object for PyPDF2
+        writer = PdfWriter()
+        for page_num in range(start_page, end_page + 1):
+            if page_num < len(reader.pages):
+                writer.add_page(reader.pages[page_num])
+        
+        output_pdf = io.BytesIO()
+        writer.write(output_pdf)
+        output_pdf.seek(0)
+        file.file = output_pdf  # Replace the original file with the extracted page range for upload
+
     # Convert 'is_critical' string to actual boolean if needed
     critical_bool = is_critical.lower() == "true"
 
