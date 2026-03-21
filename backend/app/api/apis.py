@@ -798,9 +798,24 @@ async def upload_medical_report(
 @router.get("/medical-reports")
 def get_reports(search_term: str = None, critical: bool = None, db: Session = Depends(get_db)):
     query = db.query(models.MedicalRecord)
-    if search_term and search_term.lower() == "all":
-        search_term = None  # Reset to None to fetch all records without filtering
-        critical = None  # Reset critical filter as well
+
+    limit = None
+
+    if search_term:
+        term = search_term.lower().strip()
+
+        if term == "all":
+            search_term = None
+            critical = None
+
+        elif term.startswith("last"):
+            try:
+                limit = int(term.split()[1])  # extract number
+                search_term = None
+                critical = None
+            except (IndexError, ValueError):
+                raise ValueError("Invalid format. Use 'last 20', 'last 30', etc.")
+        
 
     if search_term:
         query = query.filter(
@@ -810,11 +825,17 @@ def get_reports(search_term: str = None, critical: bool = None, db: Session = De
             (models.MedicalRecord.doctor_name.contains(search_term.lower())) |
             (cast(models.MedicalRecord.report_date, String).contains(search_term.lower()))
         )
+    
     if critical is not None:
         query = query.filter(models.MedicalRecord.is_critical == critical)
+    
+    if limit:
+        query = query.order_by(models.MedicalRecord.report_date.desc()).limit(limit)
+    else:
+        query = query.order_by(models.MedicalRecord.report_date.desc())
 
     # Sort by date so newest is always on top for the doctor
-    return query.order_by(models.MedicalRecord.report_date.desc()).all()
+    return query.all()
 
 @router.delete("/medical-reports/{record_id}")
 def delete_medical_record(record_id: int, db: Session = Depends(get_db)):

@@ -7,7 +7,7 @@ export default function HealthCare() {
     const [showForm, setShowForm] = useState(false);
     const [loading, setLoading] = useState(true);
     const [records, setRecords] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState('last 20');
 
     const loadData = async () => {
         healthCareServices.getAllRecords({ searchTerm })
