@@ -100,7 +100,7 @@ export default function HealthCare() {
                                                     <td className="px-4 py-2">{record.doctor_name}</td>
                                                     <td className="px-4 py-2">{record.tags}</td>
                                                     <td className="px-4 py-2">{record.patient_name}</td>
-                                                    <td className="px-4 py-2">{record.critical ? 'Yes' : 'No'}</td>
+                                                    <td className="px-4 py-2">{record.is_critical ? 'Yes' : 'No'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
