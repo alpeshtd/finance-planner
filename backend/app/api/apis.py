@@ -3,7 +3,7 @@ import io
 import re
 import pdfplumber
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract, text # Added these
+from sqlalchemy import func, extract, text, cast, String # Added these
 from ..db.database import SessionLocal
 from ..db import models, schemas
 from datetime import date
@@ -798,17 +798,17 @@ async def upload_medical_report(
 @router.get("/medical-reports")
 def get_reports(search_term: str = None, critical: bool = None, db: Session = Depends(get_db)):
     query = db.query(models.MedicalRecord)
-    if search_term == "all":
+    if search_term and search_term.lower() == "all":
         search_term = None  # Reset to None to fetch all records without filtering
         critical = None  # Reset critical filter as well
 
     if search_term:
         query = query.filter(
-            (models.MedicalRecord.patient_name.contains(search_term)) |
-            (models.MedicalRecord.report_type.contains(search_term)) |
-            (models.MedicalRecord.tags.contains(search_term)) |
-            (models.MedicalRecord.doctor_name.contains(search_term)) |
-            (models.MedicalRecord.report_date.contains(search_term))
+            (models.MedicalRecord.patient_name.contains(search_term.lower())) |
+            (models.MedicalRecord.report_type.contains(search_term.lower())) |
+            (models.MedicalRecord.tags.contains(search_term.lower())) |
+            (models.MedicalRecord.doctor_name.contains(search_term.lower())) |
+            (cast(models.MedicalRecord.report_date, String).contains(search_term.lower()))
         )
     if critical is not None:
         query = query.filter(models.MedicalRecord.is_critical == critical)

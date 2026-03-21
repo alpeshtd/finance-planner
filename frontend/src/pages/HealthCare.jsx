@@ -9,8 +9,8 @@ export default function HealthCare() {
     const [records, setRecords] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const loadData = async ({ critical = null }) => {
-        healthCareServices.getAllRecords({ searchTerm, critical })
+    const loadData = async () => {
+        healthCareServices.getAllRecords({ searchTerm })
             .then(data => {
                 setRecords(data);
             })
@@ -21,7 +21,7 @@ export default function HealthCare() {
     };
 
     useEffect(() => {
-        loadData({ critical: true });
+        loadData();
     }, []);
 
     const deleteRecord = async (id) => {
@@ -45,22 +45,26 @@ export default function HealthCare() {
     };
 
     return (
-        <div className="p-2">
-            <h1 className="text-2xl font-bold mb-4">Health Care</h1>
-            <p className="text-gray-600">This is the Health Care page. Content coming soon!</p>
-            <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all mt-4">
-                Upload Medical Report
-            </button>
-            <div>
+        <div className="">
+            <div className='flex justify-between items-center'>
                 <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Health Care</h1>
+                    <p className="text-gray-500 text-sm">This is the Health Care page. Content coming soon!</p>
+                </div>
+                <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm transition-all mt-4 flex items-center gap-2">
+                    <span className="text-xl">+</span>Add Report
+                </button>
+            </div>
+            <div>
+                <div className='mt-5 flex justify-center gap-2'>
                     <input
                         type='text'
                         placeholder='Search by patient name, report type, tags...'
-                        className="mb-4 p-2 border rounded-lg w-full"
+                        className="p-2 border rounded-lg w-full"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button onClick={loadData} className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg">
+                    <button onClick={loadData} className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-1 rounded-md">
                         Search
                     </button>
                 </div>
@@ -71,41 +75,25 @@ export default function HealthCare() {
                         {records.length > 0 ? (
                             <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
                                 <h2 className="text-xl font-semibold mb-2">Medical Records</h2>
-                                <div style={{ maxWidth: '82vw', overflow: 'auto' }}>
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr>
-                                                <th className="px-4 py-2">Actions</th>
-                                                <th className="px-4 py-2">Report Type</th>
-                                                <th className="px-4 py-2">Report Date</th>
-                                                <th className="px-4 py-2">Doctor Name</th>
-                                                <th className="px-4 py-2">Tags</th>
-                                                <th className="px-4 py-2">Patient Name</th>
-                                                <th className="px-4 py-2">Critical</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {records.map(record => (
-                                                <tr key={record.id}>
-                                                    <td className="px-4 py-2">
-                                                        <div className="flex items-center gap-2">
-                                                            <Info size={16} color='gray' />
-                                                            <Eye onClick={() => window.open(record.cloudinary_url, '_blank')} color='steelblue' size={16} />
-                                                            {/* <Download onClick={() => window.open(record.cloudinary_url, '_blank')} color='green' size={16} /> */}
-                                                            <Trash2 onClick={() => deleteRecord(record.id)} color='salmon' size={16} />
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2">{record.report_type}</td>
-                                                    <td className="px-4 py-2">{record.report_date}</td>
-                                                    <td className="px-4 py-2">{record.doctor_name}</td>
-                                                    <td className="px-4 py-2">{record.tags}</td>
-                                                    <td className="px-4 py-2">{record.patient_name}</td>
-                                                    <td className="px-4 py-2">{record.is_critical ? 'Yes' : 'No'}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                {records.map(record => (
+                                    <div key={record.id} className="p-2 hover:bg-gray-50 flex justify-between items-center transition-colors group">
+                                        <div className="flex flex-col">
+                                            <span className="font-medium text-gray-900" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '20ch' }}>{record.report_type}</span>
+                                            <span className="text-xs text-gray-400">{record.report_date} • {record.doctor_name} • {record.patient_name} • {record.tags}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            {/* <span className={`font-bold`}>
+                                                {record.report_type}
+                                            </span> */}
+                                            <div className="flex items-center gap-2">
+                                                <Info size={16} color='gray' />
+                                                <Eye onClick={() => window.open(record.cloudinary_url, '_blank')} color='steelblue' size={16} />
+                                                {/* <Download onClick={() => window.open(record.cloudinary_url, '_blank')} color='green' size={16} /> */}
+                                                <Trash2 onClick={() => deleteRecord(record.id)} color='salmon' size={16} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <p className="text-gray-500">No medical records found.</p>

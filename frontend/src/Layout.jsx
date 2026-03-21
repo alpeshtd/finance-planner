@@ -37,7 +37,7 @@ export default function Layout() {
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 text-xl font-bold text-blue-600 border-b">Personal Finance</div>
-        <div className="flex-1 px-4 py-4 space-y-2">
+        <div className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
           <Link to="/" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Dashboard</Link>
           <Link to="/budget" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Budget</Link>
           <Link to="/transactions" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Transactions</Link>
