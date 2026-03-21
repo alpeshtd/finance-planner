@@ -8,6 +8,11 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
+from dotenv import load_dotenv
+
+# 1. Load the .env file
+load_dotenv()
+
 # Add the project root to the Python path so backend can be imported
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -45,18 +50,31 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Run migrations in 'online' mode."""
+    
+    # 2. Get the URL from environment variables
+    url = os.getenv("DATABASE_URL")
+    
+    # 3. Small fix for Render/Postgres compatibility
+    if url and url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    # 4. Create the engine using the dynamic URL
+    # This overrides whatever is written in alembic.ini
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        url=url,  # <--- This is the most important line
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, 
+            target_metadata=target_metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()
