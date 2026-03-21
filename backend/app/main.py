@@ -8,6 +8,9 @@ from .db.database import Base, engine
 from .db import models  # ensure models are imported so they are registered with SQLAlchemy
 from fastapi.middleware.cors import CORSMiddleware
 
+import cloudinary
+import cloudinary.uploader
+
 # Load environment variables from backend/.env (for local development)
 load_dotenv()
 
@@ -31,3 +34,10 @@ app.add_middleware(
 app.include_router(api_router, prefix="/api")
 
 # add any startup/shutdown events, middleware, etc.
+
+cloudinary.config( 
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+    api_key = os.getenv("CLOUDINARY_API_KEY"), 
+    api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)

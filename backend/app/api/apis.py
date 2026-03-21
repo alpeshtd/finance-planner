@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Depends
 import io
 import re
 import pdfplumber
@@ -8,6 +8,10 @@ from ..db.database import SessionLocal
 from ..db import models, schemas
 from datetime import date
 from typing import Optional
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 router = APIRouter()
 
@@ -745,3 +749,92 @@ async def upload_pdf(file: UploadFile = File(...)):
         "transactions": transactions,
         "summary": generate_summary(transactions)
     }
+
+
+import cloudinary.uploader
+
+@router.post("/upload-medical")
+async def upload_medical_report(
+    file: UploadFile = File(...),                    # Explicitly mark as File
+    patient_name: str = Form(...),                   # Explicitly mark as Form
+    report_type: str = Form(...),
+    report_date: str = Form(...),
+    tags: str = Form(None),                          # Form(None) makes it optional
+    doctor_name: str = Form(None),
+    is_critical: str = Form("false"),                # Forms send booleans as strings
+    db: Session = Depends(get_db)                    # Don't forget your DB session!
+):
+    # Convert 'is_critical' string to actual boolean if needed
+    critical_bool = is_critical.lower() == "true"
+
+    # 1. Upload to Cloudinary
+    # Use file.file to get the actual spooled file object
+    upload_result = cloudinary.uploader.upload(
+        file.file, 
+        folder=os.getenv("CLOUDINARY_FOLDER", "medical_app/local"),
+        resource_type="auto"
+    )
+    
+    file_url = upload_result.get("secure_url")
+    p_id = upload_result.get("public_id")
+
+    # 2. Save to DB
+    new_record = models.MedicalRecord(
+        patient_name=patient_name,
+        report_type=report_type,
+        report_date=date.fromisoformat(report_date),
+        cloudinary_url=file_url,
+        public_id=p_id,
+        tags=tags,
+        doctor_name=doctor_name,
+        is_critical=critical_bool
+    )
+    db.add(new_record)
+    db.commit()
+    db.refresh(new_record)
+    
+    return new_record
+
+@router.get("/medical-reports")
+def get_reports(search_term: str = None, critical: bool = None, db: Session = Depends(get_db)):
+    query = db.query(models.MedicalRecord)
+    if search_term == "all":
+        search_term = None  # Reset to None to fetch all records without filtering
+        critical = None  # Reset critical filter as well
+
+    if search_term:
+        query = query.filter(
+            (models.MedicalRecord.patient_name.contains(search_term)) |
+            (models.MedicalRecord.report_type.contains(search_term)) |
+            (models.MedicalRecord.tags.contains(search_term)) |
+            (models.MedicalRecord.doctor_name.contains(search_term)) |
+            (models.MedicalRecord.report_date.contains(search_term))
+        )
+    if critical is not None:
+        query = query.filter(models.MedicalRecord.is_critical == critical)
+
+    # Sort by date so newest is always on top for the doctor
+    return query.order_by(models.MedicalRecord.report_date.desc()).all()
+
+@router.delete("/medical-reports/{record_id}")
+def delete_medical_record(record_id: int, db: Session = Depends(get_db)):
+    # 1. Find the record in your DB
+    record = db.query(models.MedicalRecord).filter(models.MedicalRecord.id == record_id).first()
+    
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    try:
+        # 2. Delete the file from Cloudinary using the stored public_id
+        # Note: If it's a PDF, you might need resource_type="raw" or "auto"
+        cloudinary.uploader.destroy(record.public_id, resource_type="image")
+        
+        # 3. Delete the row from your SQLite database
+        db.delete(record)
+        db.commit()
+        
+        return {"message": "Record and file deleted successfully"}
+    
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error during deletion: {str(e)}")

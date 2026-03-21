@@ -13,7 +13,7 @@ function CategoryRow({ category, level = 0 }) {
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
                         {level > 0 && <ChevronRight size={12} className="text-gray-300" />}
                         <span className={`text-sm ${level === 0 ? 'font-black text-gray-900' : 'font-bold text-gray-600'}`}>
-                            {category.name} ({category.percentage}%)
+                            {category.name}
                         </span>
                     </div>
                 </td>

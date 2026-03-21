@@ -14,6 +14,7 @@ import Emergency from './pages/Emergency.jsx';
 import Budget from './pages/Budget.jsx';
 import Milestones from './pages/Milestones.jsx';
 import Utility from './pages/Utility.jsx';
+import HealthCare from './pages/HealthCare.jsx';
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: "emergency", element: <Emergency /> },
       { path: "users", element: <Users /> },
       { path: "utility", element: <Utility /> },
+      { path: "healthcare", element: <HealthCare /> }
     ],
   },
 ]);

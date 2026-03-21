@@ -47,6 +47,7 @@ export default function Layout() {
           <Link to="/milestones" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Milestones</Link>
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
           <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
+          <Link to="/healthcare" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Health Care</Link>
           <button className="" onClick={refreshClickHandle}>Refresh BE</button>
         </div>
       </nav>

@@ -78,3 +78,18 @@ class Milestone(Base):
     category_id = Column(Integer, ForeignKey("categories.id")) # Link to track progress
     is_recurring = Column(Boolean, default=False)
     frequency_months = Column(Integer, default=0) # e.g., 6 for your loan
+
+
+
+class MedicalRecord(Base):
+    __tablename__ = "medical_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_name = Column(String) # For you or your wife
+    report_type = Column(String) # e.g., "Blood Test", "Prescription"
+    tags = Column(String) # Comma-separated tags like "diabetes,annual_checkup"
+    report_date = Column(Date)
+    doctor_name = Column(String, nullable=True)
+    cloudinary_url = Column(String) # The "secure_url" from Cloudinary
+    public_id = Column(String) # Needed if you ever want to delete the file
+    is_critical = Column(Boolean, default=False)
