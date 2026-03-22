@@ -839,15 +839,17 @@ def get_reports(search_term: str = None, critical: bool = None, db: Session = De
                 critical = None
             except (IndexError, ValueError):
                 raise ValueError("Invalid format. Use 'last 20', 'last 30', etc.")
+        else:
+            search_term = term
         
 
     if search_term:
         query = query.filter(
-            (models.MedicalRecord.patient_name.contains(search_term.lower())) |
-            (models.MedicalRecord.report_type.contains(search_term.lower())) |
-            (models.MedicalRecord.tags.contains(search_term.lower())) |
-            (models.MedicalRecord.doctor_name.contains(search_term.lower())) |
-            (cast(models.MedicalRecord.report_date, String).contains(search_term.lower()))
+            (models.MedicalRecord.patient_name.icontains(search_term)) |
+            (models.MedicalRecord.report_type.icontains(search_term)) |
+            (models.MedicalRecord.tags.icontains(search_term)) |
+            (models.MedicalRecord.doctor_name.icontains(search_term)) |
+            (cast(models.MedicalRecord.report_date, String).icontains(search_term))
         )
     
     if critical is not None:
