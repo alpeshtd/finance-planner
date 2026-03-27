@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { budgetService } from '../services/budgetService';
 import { Target, Wallet, TrendingUp, ChevronRight, ArrowUpRight, HandCoins, Split } from 'lucide-react';
 import DateFilter from '../components/DateFilter';
+import { useNavigate } from 'react-router-dom';
 
-function CategoryRow({ category, level = 0 }) {
+function CategoryRow({ category, level = 0, onCategoryClick }) {
     const hasChildren = category.sub_categories && category.sub_categories.length > 0;
 
     return (
         <>
-            <tr className="hover:bg-gray-50 transition-colors border-b border-gray-50">
+            <tr className="hover:bg-gray-50 transition-colors border-b border-gray-50" onClick={() => onCategoryClick(category)}>
                 <td className="px-3 py-2">
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${level * 24}px` }}>
                         {level > 0 && <ChevronRight size={12} className="text-gray-300" />}
@@ -31,7 +32,7 @@ function CategoryRow({ category, level = 0 }) {
             </tr>
             {/* Recursive Render: If this category has children, render them below */}
             {hasChildren && category.sub_categories.map(child => (
-                <CategoryRow key={child.id} category={child} level={level + 1} />
+                <CategoryRow key={child.id} category={child} level={level + 1} onCategoryClick={onCategoryClick} />
             ))}
         </>
     );
@@ -44,6 +45,7 @@ export default function Budget() {
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear()
     });
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Fetching the fully computed engine data from Python
@@ -56,6 +58,11 @@ export default function Budget() {
     if (loading) return <div className="p-20 text-center font-black animate-pulse uppercase tracking-widest text-gray-400">Syncing with Bank Records...</div>;
 
     const investmentBucket = data.buckets.find(b => b.name === 'Investments');
+
+    const categoryClickHandler = (category) => {
+        // Handle category click logic here
+        navigate(`/transactions?category_id=${category.id}${filters.start ? `&start=${filters.start}` : ''}${filters.end ? `&end=${filters.end}` : ''}`); // Navigate to category details page (you need to set up this route)
+    }
 
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-24">
@@ -181,7 +188,7 @@ export default function Budget() {
                                     </thead>
                                     <tbody>
                                         {/* Start the recursion with the root bucket */}
-                                        <CategoryRow category={rootBucket} />
+                                        <CategoryRow category={rootBucket} onCategoryClick={categoryClickHandler} />
                                     </tbody>
                                 </table>
                             </div>

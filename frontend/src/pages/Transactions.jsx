@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { transactionService } from '../services/transactionService';
 import TransactionForm from '../components/TransactionForm'; // Import your new form
 import DateFilter from '../components/DateFilter';
-import { Trash2 } from 'lucide-react';
+import { FileTerminal, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { userService } from '../services/userService';
 import { accountService } from '../services/accountService';
 import { categoryService } from '../services/catServices';
+import TransactionFilters from '../components/TransactionFilters';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 const TransactionCss = {
   "EXPENSE": "text-red-500",
@@ -13,16 +15,29 @@ const TransactionCss = {
   "TRANSFER": "text-blue-500"
 }
 
+const formatDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 export default function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [params] = useSearchParams();
+  const paramCategory_id = params.get('category_id');
+  const paramStart = params.get('start');
+  const paramEnd = params.get('end');
   const [filters, setFilters] = useState({
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
+    // month: new Date().getMonth() + 1,
+    // year: new Date().getFullYear(),
+    start: paramStart ||  formatDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+    end: paramEnd || formatDate(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
+    category_id: paramCategory_id || "",
+    account_id: "",
+    user_id: ""
   });
 
   useEffect(() => {
@@ -35,11 +50,6 @@ export default function Transactions() {
       setUsers(userData);
       setAccounts(accountData);
       setCategories(catData);
-
-      // Default to first user if available
-      if (userData.length > 0) {
-        setFormData(prev => ({ ...prev, user_id: userData[0].id }));
-      }
     });
   }, []);
 
@@ -74,6 +84,7 @@ export default function Transactions() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <DateFilter onFilterChange={(newFilter) => setFilters(newFilter)} />
+        <SlidersHorizontal size={18} color="gray" className="cursor-pointer" onClick={() => setShowFilters(true)} />
       </div>
       {/* Header with Add Button */}
       <div className="flex justify-between items-center">
@@ -129,6 +140,19 @@ export default function Transactions() {
           onTransactionAdded={() => {
             loadData(); // Refresh the list automatically
             setShowForm(false);
+          }}
+        />
+      )}
+      {showFilters && (
+        <TransactionFilters
+          categories={categories}
+          accounts={accounts}
+          users={users}
+          filters={filters}
+          onApplyFilters={(newFilters) => {
+            setFilters({ ...filters, ...newFilters });
+            loadData(); // Refresh the list automatically
+            setShowFilters(false);
           }}
         />
       )}

@@ -4,10 +4,16 @@ export const transactionService = {
   // Fetch all transactions
   getAll: async (filters) => {
     const response = await api.get(`/transactions/`, {
-      params: { user_id: filters.userId ? parseInt(filters.userId) : undefined, month: filters.month, 
+      params: { 
+        month: filters.month, 
         year: filters.year,
         start_date: filters.start,
-        end_date: filters.end }
+        end_date: filters.end,
+        category_id: filters.category_id ? parseInt(filters.category_id) : undefined,
+        account_id: filters.account_id ? parseInt(filters.account_id) : undefined,
+        user_id: filters.user_id ? parseInt(filters.user_id) : undefined,
+        type: filters.type ? parseInt(filters.type) : undefined
+      }
     });
     return response.data;
   },

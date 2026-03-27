@@ -241,6 +241,9 @@ def get_transactions(
     start_date: Optional[date] = None, 
     end_date: Optional[date] = None,
     user_id: Optional[int] = None,
+    category_id: Optional[int] = None,
+    type: Optional[models.TransactionType] = None,
+    account_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
     # 1. Reuse the same dynamic date logic
@@ -253,6 +256,19 @@ def get_transactions(
             extract('month', models.Transaction.date) == target_month,
             extract('year', models.Transaction.date) == target_year
         ]
+    # Add user filter if provided
+    if user_id is not None:
+        date_criteria.append(models.Transaction.user_id == user_id)
+    # Add category filter if provided
+    if category_id is not None:
+        date_criteria.append(models.Transaction.category_id == category_id)
+    # Add type filter if provided
+    if type is not None:
+        date_criteria.append(models.Transaction.type == type)
+    # Add account filter if provided
+    if account_id is not None:
+        date_criteria.append((models.Transaction.from_account_id == account_id) | (models.Transaction.to_account_id == account_id))
+
 
     # 2. Query with the filters
     transactions = db.query(models.Transaction).filter(*date_criteria).order_by(models.Transaction.date.desc()).all()
@@ -345,6 +361,7 @@ def get_category_node(category, date_criteria, db: Session, base_amount: float):
 
     return {
         "name": category.name,
+        "id": category.id,
         "target_amount": float(current_target),
         "covered_amount": float(total_spent),
         "sub_categories": sub_categories,

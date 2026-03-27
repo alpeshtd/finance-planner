@@ -17,8 +17,8 @@ export default function DateFilter({ onFilterChange }) {
   const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
 
   const options = [
-    { label: 'Current Month', value: { month: currentMonth, year: currentYear } },
-    { label: 'Last Month', value: { month: lastMonthDate.getMonth() + 1, year: lastMonthDate.getFullYear() } },
+    { label: 'Current Month', value: { start: formatDate(new Date(today.getFullYear(), today.getMonth(), 1)), end: formatDate(new Date(today.getFullYear(), today.getMonth() + 1, 0)) } },
+    { label: 'Last Month', value: { start: formatDate(new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth(), 1)), end: formatDate(new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0)) } },
     { label: 'Last 3 Months', value: getLastMonthsRange(3) },
     { label: 'Last 6 Months', value: getLastMonthsRange(6) },
     { label: `Full Year ${currentYear}`, value: { start: `${currentYear}-01-01`, end: `${currentYear}-12-31` } },
