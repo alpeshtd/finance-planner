@@ -151,7 +151,6 @@ export default function Transactions() {
           filters={filters}
           onApplyFilters={(newFilters) => {
             setFilters({ ...filters, ...newFilters });
-            loadData(); // Refresh the list automatically
             setShowFilters(false);
           }}
         />
