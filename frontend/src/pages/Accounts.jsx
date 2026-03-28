@@ -31,17 +31,36 @@ export default function Accounts() {
 
   const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 
+  const splitBalance = accounts.reduce((sum, acc) => {
+    if (acc.account_type === 'SAVINGS') {
+      sum.bank += parseFloat(acc.balance);
+    } else {
+      sum.other += parseFloat(acc.balance);
+    }
+    return sum;
+  }, { bank: 0, other: 0 });
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Net Worth Summary Card */}
       <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-lg shadow-blue-200">
-        <p className="opacity-80 text-sm font-medium uppercase tracking-wider">Total Available Balance</p>
-        <h2 className="text-4xl font-bold mt-1">₹{totalBalance.toLocaleString('en-IN')}</h2>
+        <div>
+          <p className="opacity-80 text-sm font-medium uppercase tracking-wider">Total Available Balance</p>
+          <h2 className="text-4xl font-bold mt-1">₹{totalBalance.toLocaleString('en-IN')}</h2>
+        </div>
+        <div className='flex gap-6'>
+          <p className="mt-6 text-sm font-medium opacity-90">
+            In Bank: <span className="font-black">₹{splitBalance.bank.toLocaleString('en-IN')}</span>
+          </p>
+          <p className="mt-6 text-sm font-medium opacity-90">
+            Others: <span className="font-black">₹{splitBalance.other.toLocaleString('en-IN')}</span>
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-between items-center px-2">
         <h3 className="text-xl font-bold text-gray-800">Your Accounts</h3>
-        <button 
+        <button
           onClick={() => { setEditingAccount(null); setShowForm(true); }}
           className="text-blue-600 font-bold text-sm hover:underline"
         >
@@ -61,14 +80,14 @@ export default function Accounts() {
             <div className="text-right">
               <p className="text-lg font-bold text-gray-900">₹{parseFloat(acc.balance).toLocaleString('en-IN')}</p>
               <div className="flex gap-2 justify-end mt-2">
-                <button 
+                <button
                   onClick={() => { setEditingAccount(acc); setShowForm(true); }}
                   className="text-blue-500 hover:text-blue-700 transition-colors"
                   title="Edit"
                 >
                   <Pencil size={14} />
                 </button>
-                <button 
+                <button
                   onClick={() => handleDelete(acc.id, acc.name)}
                   className="text-red-500 hover:text-red-700 transition-colors"
                   title="Delete"
@@ -82,9 +101,9 @@ export default function Accounts() {
       </div>
 
       {showForm && (
-        <AccountForm 
-          onClose={() => setShowForm(false)} 
-          onAccountAdded={loadData} 
+        <AccountForm
+          onClose={() => setShowForm(false)}
+          onAccountAdded={loadData}
           editingAccount={editingAccount}
         />
       )}

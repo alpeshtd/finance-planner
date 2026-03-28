@@ -71,6 +71,8 @@ export default function Budget() {
         navigate(`/transactions?category_id=${category.id}${filters.start ? `&start=${filters.start}` : ''}${filters.end ? `&end=${filters.end}` : ''}`); // Navigate to category details page (you need to set up this route)
     }
 
+    const monthlySurplus = data.monthly_income - data.monthly_expense - data.monthly_transfer;
+
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-24">
             <div className="flex justify-between items-center">
@@ -93,7 +95,7 @@ export default function Budget() {
             <div className='bg-white p-4 rounded-[1rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow'>
                 <div className="flex justify-between items-center">
                     <div className='flex items-center gap-3'>
-                        <HandCoins size={20} className="text-yellow-500" />
+                        <HandCoins size={20} className="text-red-500" />
                         <h2 className='text-lg font-bold'>Expenses</h2>
                     </div>
                     <span className="text-lg font-bold text-gray-800">₹{data.monthly_expense.toLocaleString()}</span>
@@ -105,6 +107,13 @@ export default function Budget() {
                     </div>
                     <span className="text-lg font-bold text-gray-800">₹{data.monthly_transfer.toLocaleString()}</span>
                 </div>
+                { monthlySurplus > 0 && <div className="flex justify-between items-center">
+                    <div className='flex items-center gap-3'>
+                        <TrendingUp size={20} className="text-emerald-500" />
+                        <h2 className='text-lg font-bold'>Surplus</h2>
+                    </div>
+                    <span className="text-lg font-bold text-gray-800">₹{monthlySurplus.toLocaleString()}</span>
+                </div>}
             </div>
 
             {/* --- GAP ANALYSIS: THE INVESTMENT VELOCITY --- */}
