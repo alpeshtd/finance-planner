@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { userService } from '../services/userService';
 
-export default function UserForm({ onUserAdded, onClose }) {
+export default function UserForm({ onUserAdded, onClose, user }) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     password: '',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await userService.create(formData);
+      if (user) {
+        await userService.update(user.id, formData);
+      } else {
+        await userService.create(formData);
+      }
       onUserAdded();
       onClose();
     } catch (error) {
@@ -49,7 +53,7 @@ export default function UserForm({ onUserAdded, onClose }) {
           />
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-3 text-gray-500 font-bold">Cancel</button>
-            <button type="submit" className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold">Create User</button>
+            <button type="submit" className="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold">{user ? 'Update User' : 'Create User'}</button>
           </div>
         </form>
       </div>

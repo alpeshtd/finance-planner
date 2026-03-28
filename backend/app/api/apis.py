@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Depends
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.security import OAuth2PasswordBearer
 import io
 import re
 import pdfplumber
@@ -6,14 +7,22 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, text, cast, String # Added these
 from ..db.database import SessionLocal
 from ..db import models, schemas
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Optional
 from dotenv import load_dotenv
+from passlib.context import CryptContext
+from jose import JWTError, jwt
 import os
 
 load_dotenv()
 
 router = APIRouter()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 # Dependency
 def get_db():
@@ -22,6 +31,53 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def verify_password(plain_password: str, hashed_password: str):
+    if hashed_password.startswith("$2"):
+        return pwd_context.verify(plain_password, hashed_password)
+    return plain_password == hashed_password
+
+
+def get_password_hash(password: str):
+    return pwd_context.hash(password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
+def authenticate_user(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+    if not user or not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    user = get_user_by_email(db, email)
+    if user is None:
+        raise credentials_exception
+    return user
 
 @router.get("/health")
 def check_health():
@@ -39,16 +95,50 @@ def get_enums():
 
 @router.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    # In a real app, you'd hash the password here
-    db_user = models.User(name=user.name, email=user.email, hashed_password=user.password)
+    db_user = models.User(
+        name=user.name,
+        email=user.email,
+        hashed_password=get_password_hash(user.password)
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
 
-@router.get("/users/")
+@router.post("/users/login", response_model=schemas.Token)
+def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
+    db_user = authenticate_user(db, user.email, user.password)
+    if not db_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(
+        data={"sub": db_user.email, "user_id": db_user.id}
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/users/me", response_model=schemas.User)
+def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+@router.get("/users/", response_model=list[schemas.User])
 def list_users(db: Session = Depends(get_db)):
     return db.query(models.User).all()
+
+@router.put("/users/{user_id}", response_model=schemas.User)
+def update_user(user_id: int, user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    update_data = user.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 
 @router.post("/accounts/")
 def create_account(account: schemas.AccountCreate, db: Session = Depends(get_db)):

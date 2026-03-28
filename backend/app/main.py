@@ -23,6 +23,11 @@ if allowed_origins == "*":
     allow_origins = ["*"]
 else:
     allow_origins = [o.strip() for o in allowed_origins.split(",") if o.strip()]
+    # Allow both localhost and 127.0.0.1 for common dev URLs
+    if "http://localhost:5173" in allow_origins and "http://127.0.0.1:5173" not in allow_origins:
+        allow_origins.append("http://127.0.0.1:5173")
+    elif "http://127.0.0.1:5173" in allow_origins and "http://localhost:5173" not in allow_origins:
+        allow_origins.append("http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,

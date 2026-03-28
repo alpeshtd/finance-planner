@@ -15,11 +15,21 @@ import Budget from './pages/Budget.jsx';
 import Milestones from './pages/Milestones.jsx';
 import Utility from './pages/Utility.jsx';
 import HealthCare from './pages/HealthCare.jsx';
+import Login from './pages/Login.jsx';
+import RequireAuth from './components/RequireAuth.jsx';
 
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: <Login />,
+  },
+  {
     path: "/",
-    element: <Layout />, // This contains your Navbar and Sidebar
+    element: (
+      <RequireAuth>
+        <Layout />
+      </RequireAuth>
+    ),
     children: [
       { path: "/", element: <Dashboard /> },
       { path: "budget", element: <Budget /> },

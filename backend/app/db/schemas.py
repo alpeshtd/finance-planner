@@ -10,6 +10,14 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str  # Only used when creating, never sent back in GET
 
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 class User(UserBase):
     id: int
     class Config:

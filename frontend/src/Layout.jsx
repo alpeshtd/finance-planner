@@ -1,13 +1,27 @@
-import { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { utilityServices } from './services/utilityServices';
 
 export default function Layout() {
   // 1. Create the 'switch' (state)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleStorage = () => setIsLoggedIn(Boolean(localStorage.getItem('token')));
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Helper function to close menu when a link is clicked
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    navigate('/login');
+  };
 
   const refreshClickHandle = async () => {
     try {
@@ -48,7 +62,8 @@ export default function Layout() {
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
           <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
           <Link to="/healthcare" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Health Care</Link>
-          <button className="" onClick={refreshClickHandle}>Refresh BE</button>
+          <button className="block w-full text-left p-3 rounded-lg text-red-600 hover:bg-red-50" onClick={handleLogout}>Logout</button>
+          <button className="block w-full text-left p-3 rounded-lg hover:bg-blue-50" onClick={refreshClickHandle}>Refresh BE</button>
         </div>
       </nav>
 
