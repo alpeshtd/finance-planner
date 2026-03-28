@@ -1,8 +1,9 @@
 import api from './api';
 
 export const accountService = {
-  getAll: async () => {
-    const response = await api.get('/accounts/');
+  getAll: async (userId) => {
+    const url = userId ? `/accounts/${userId}` : '/accounts/';
+    const response = await api.get(url);
     return response.data;
   },
   create: async (accountData) => {

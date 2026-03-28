@@ -2,15 +2,17 @@ import { Zap, AlertTriangle, Target, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { MilestoneCard } from '../components/MilestoneCard';
+import { useSelectedUser } from '../contexts/SelectedUserContext.jsx';
 
 export default function Dashboard() {
   const [insights, setInsights] = useState(null);
   const [milestones, setMilestones] = useState([]);
+  const { selectedUserId } = useSelectedUser();
 
   useEffect(() => {
-    api.get('/dashboard/insights').then(res => setInsights(res.data));
+    api.get('/dashboard/insights', { params: { user_id: selectedUserId } }).then(res => setInsights(res.data));
     api.get('/milestones/status').then(res => setMilestones(res.data));
-  }, []);
+  }, [selectedUserId]);
 
   if (!insights) return <div className="p-10 text-center font-black animate-pulse text-gray-400 uppercase tracking-widest">Scanning Wealth Engine...</div>;
 

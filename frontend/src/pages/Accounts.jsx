@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { accountService } from '../services/accountService';
 import AccountForm from '../components/AccountForm';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useSelectedUser } from '../contexts/SelectedUserContext.jsx';
 
 export default function Accounts() {
   const [accounts, setAccounts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
+  const { selectedUserId } = useSelectedUser();
 
   const loadData = async () => {
-    const data = await accountService.getAll();
+    const data = await accountService.getAll(selectedUserId);
     setAccounts(data);
   };
 
@@ -25,7 +27,7 @@ export default function Accounts() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [selectedUserId]);
 
   const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(acc.balance), 0);
 

@@ -18,7 +18,10 @@ load_dotenv()
 
 router = APIRouter()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256", "bcrypt"],
+    deprecated="auto",
+)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
@@ -34,9 +37,10 @@ def get_db():
 
 
 def verify_password(plain_password: str, hashed_password: str):
-    if hashed_password.startswith("$2"):
+    try:
         return pwd_context.verify(plain_password, hashed_password)
-    return plain_password == hashed_password
+    except ValueError:
+        return False
 
 
 def get_password_hash(password: str):
@@ -133,6 +137,8 @@ def update_user(user_id: int, user: schemas.UserCreate, db: Session = Depends(ge
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     update_data = user.dict(exclude_unset=True)
+    if "password" in update_data:
+        db_user.hashed_password = get_password_hash(update_data.pop("password"))
     for key, value in update_data.items():
         setattr(db_user, key, value)
     db.commit()
@@ -435,19 +441,20 @@ def get_category_breakdown(root_id: int, root_target: float, month: int, year: i
         })
     return breakdown
 
-def get_category_node(category, date_criteria, db: Session, base_amount: float):
+def get_category_node(category, date_criteria, db: Session, base_amount: float, user_id: Optional[int] = None):
     current_target = base_amount * (float(category.percentage or 0) / 100)
     all_branch_ids = get_all_descendant_ids(category.id, db)
+    user_criteria = [models.Transaction.user_id == user_id] if user_id is not None else []
     
-    # Apply the same date_criteria here
     total_spent = db.query(func.sum(models.Transaction.amount)).filter(
         models.Transaction.category_id.in_(all_branch_ids),
         models.Transaction.type.in_([models.TransactionType.EXPENSE, models.TransactionType.TRANSFER]),
-        *date_criteria 
+        *date_criteria,
+        *user_criteria
     ).scalar() or 0
 
     children = db.query(models.Category).filter(models.Category.parent_id == category.id).all()
-    sub_categories = [get_category_node(c, date_criteria, db, current_target) for c in children]
+    sub_categories = [get_category_node(c, date_criteria, db, current_target, user_id) for c in children]
 
     return {
         "name": category.name,
@@ -464,6 +471,7 @@ def get_budget_dashboard(
     year: Optional[int] = None, 
     start_date: Optional[date] = None, 
     end_date: Optional[date] = None,
+    user_id: Optional[int] = None,
     db: Session = Depends(get_db)
 ):
     # 1. Build the Dynamic Date Filter
@@ -480,25 +488,33 @@ def get_budget_dashboard(
         ]
 
     # 2. Income Query using the criteria
-    monthly_income = db.query(func.sum(models.Transaction.amount)).join(
-        models.Account, models.Transaction.to_account_id == models.Account.id
-    ).filter(
+    monthly_income_filters = [
         models.Account.account_type == models.AccountType.SAVINGS,
         models.Transaction.type == models.TransactionType.INCOME,
-        *date_criteria  # This unpacks either the range or the month/year
-    ).scalar() or 0
+        *date_criteria
+    ]
+    monthly_expense_filters = [
+        models.Transaction.type == models.TransactionType.EXPENSE,
+        *date_criteria
+    ]
+    monthly_transfer_filters = [
+        models.Transaction.type == models.TransactionType.TRANSFER,
+        *date_criteria
+    ]
+    if user_id is not None:
+        monthly_income_filters.append(models.Transaction.user_id == user_id)
+        monthly_expense_filters.append(models.Transaction.user_id == user_id)
+        monthly_transfer_filters.append(models.Transaction.user_id == user_id)
+
+    monthly_income = db.query(func.sum(models.Transaction.amount)).join(
+        models.Account, models.Transaction.to_account_id == models.Account.id
+    ).filter(*monthly_income_filters).scalar() or 0
 
     monthly_expense = db.query(func.sum(models.Transaction.amount)).join(
         models.Category, models.Transaction.category_id == models.Category.id
-    ).filter(
-        models.Transaction.type == models.TransactionType.EXPENSE,
-        *date_criteria
-    ).scalar() or 0
+    ).filter(*monthly_expense_filters).scalar() or 0
 
-    monthly_transfer = db.query(func.sum(models.Transaction.amount)).filter(
-        models.Transaction.type == models.TransactionType.TRANSFER,
-        *date_criteria
-    ).scalar() or 0
+    monthly_transfer = db.query(func.sum(models.Transaction.amount)).filter(*monthly_transfer_filters).scalar() or 0
 
     roots = db.query(models.Category).filter(models.Category.parent_id == None).all()
     
@@ -508,7 +524,7 @@ def get_budget_dashboard(
         "monthly_expense": float(monthly_expense),
         "monthly_transfer": float(monthly_transfer),
         "buckets": [
-            get_category_node(root, date_criteria, db, float(monthly_income)) 
+            get_category_node(root, date_criteria, db, float(monthly_income), user_id) 
             for root in roots
         ]
     }
@@ -593,15 +609,18 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     }
 
 @router.get("/dashboard/insights")
-def get_dynamic_insights(db: Session = Depends(get_db)):
+def get_dynamic_insights(user_id: Optional[int] = None, db: Session = Depends(get_db)):
     today = date.today()
     start_of_month = today.replace(day=1)
     
     # 1. Calculate Daily Velocity
     days_passed = today.day
+    user_criteria = [models.Transaction.user_id == user_id] if user_id is not None else []
+
     expenses_this_month = db.query(func.sum(models.Transaction.amount)).filter(
         models.Transaction.type == models.TransactionType.EXPENSE,
-        models.Transaction.date >= start_of_month
+        models.Transaction.date >= start_of_month,
+        *user_criteria
     ).scalar() or 0
     daily_burn = float(expenses_this_month) / days_passed
 
@@ -611,13 +630,15 @@ def get_dynamic_insights(db: Session = Depends(get_db)):
         func.sum(models.Transaction.amount).label('total')
     ).join(models.Transaction).filter(
         models.Transaction.type == models.TransactionType.EXPENSE,
-        models.Transaction.date >= start_of_month
+        models.Transaction.date >= start_of_month,
+        *user_criteria
     ).group_by(models.Category.name).order_by(text('total DESC')).first()
 
     # 3. Investment Consistency
     investment_total = db.query(func.sum(models.Transaction.amount)).join(models.Category).filter(
         models.Category.name.ilike("%Investment%"), # Or use your root category ID
-        models.Transaction.date >= start_of_month
+        models.Transaction.date >= start_of_month,
+        *user_criteria
     ).scalar() or 0
 
     # 4. Generate Dynamic Suggestion Logic

@@ -8,6 +8,7 @@ import { accountService } from '../services/accountService';
 import { categoryService } from '../services/catServices';
 import TransactionFilters from '../components/TransactionFilters';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { useSelectedUser } from '../contexts/SelectedUserContext.jsx';
 
 const TransactionCss = {
   "EXPENSE": "text-red-500",
@@ -30,6 +31,8 @@ export default function Transactions() {
   const paramCategory_id = params.get('category_id');
   const paramStart = params.get('start');
   const paramEnd = params.get('end');
+  const { selectedUserId } = useSelectedUser();
+
   const [filters, setFilters] = useState({
     // month: new Date().getMonth() + 1,
     // year: new Date().getFullYear(),
@@ -37,7 +40,7 @@ export default function Transactions() {
     end: paramEnd || formatDate(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
     category_id: paramCategory_id || "",
     account_id: "",
-    user_id: ""
+    user_id: selectedUserId ? String(selectedUserId) : ""
   });
 
   useEffect(() => {
@@ -68,6 +71,13 @@ export default function Transactions() {
   useEffect(() => {
     loadData();
   }, [filters]);
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      user_id: selectedUserId ? String(selectedUserId) : ""
+    }));
+  }, [selectedUserId]);
 
   const handleDeleteClick = async (transaction) => {
     if (window.confirm(`Are you sure you want to delete this transaction: "${transaction.note}"?`)) {

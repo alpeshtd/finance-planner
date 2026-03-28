@@ -13,7 +13,8 @@ export const budgetService = {
         month: filters.month, 
         year: filters.year,
         start_date: filters.start,
-        end_date: filters.end
+        end_date: filters.end,
+        user_id: filters.user_id
         } 
     });
     return response.data;

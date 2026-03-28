@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { utilityServices } from './services/utilityServices';
+import { useSelectedUser } from './contexts/SelectedUserContext.jsx';
 
 export default function Layout() {
   // 1. Create the 'switch' (state)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(localStorage.getItem('token')));
+  const { selectedUserId } = useSelectedUser();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,6 +53,11 @@ export default function Layout() {
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="p-6 text-xl font-bold text-blue-600 border-b">Personal Finance</div>
+        {selectedUserId && (
+          <div className="px-4 py-3 text-sm text-slate-600 bg-slate-50 border-b border-slate-100">
+            Filtered by user ID: {selectedUserId}
+          </div>
+        )}
         <div className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
           <Link to="/" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Dashboard</Link>
           <Link to="/budget" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Budget</Link>
@@ -62,6 +69,7 @@ export default function Layout() {
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
           <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
           <Link to="/healthcare" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Health Care</Link>
+          <Link to="/settings" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Settings</Link>
           <button className="block w-full text-left p-3 rounded-lg text-red-600 hover:bg-red-50" onClick={handleLogout}>Logout</button>
           <button className="block w-full text-left p-3 rounded-lg hover:bg-blue-50" onClick={refreshClickHandle}>Refresh BE</button>
         </div>

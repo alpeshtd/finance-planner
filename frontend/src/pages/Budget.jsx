@@ -3,6 +3,7 @@ import { budgetService } from '../services/budgetService';
 import { Target, Wallet, TrendingUp, ChevronRight, ArrowUpRight, HandCoins, Split } from 'lucide-react';
 import DateFilter from '../components/DateFilter';
 import { useNavigate } from 'react-router-dom';
+import { useSelectedUser } from '../contexts/SelectedUserContext.jsx';
 
 function CategoryRow({ category, level = 0, onCategoryClick }) {
     const hasChildren = category.sub_categories && category.sub_categories.length > 0;
@@ -41,11 +42,17 @@ function CategoryRow({ category, level = 0, onCategoryClick }) {
 export default function Budget() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { selectedUserId } = useSelectedUser();
     const [filters, setFilters] = useState({
         month: new Date().getMonth() + 1,
-        year: new Date().getFullYear()
+        year: new Date().getFullYear(),
+        user_id: selectedUserId || undefined
     });
     const navigate = useNavigate();
+
+    useEffect(() => {
+        setFilters(prev => ({ ...prev, user_id: selectedUserId || undefined }));
+    }, [selectedUserId]);
 
     useEffect(() => {
         // Fetching the fully computed engine data from Python

@@ -24,19 +24,32 @@ export default function TransactionForm({ onTransactionAdded, onClose }) {
     // Fetch all required data for the dropdowns
     Promise.all([
       userService.getAll(),
-      accountService.getAll(),
       categoryService.getAll()
-    ]).then(([userData, accountData, catData]) => {
+    ]).then(([userData, catData]) => {
       setUsers(userData);
-      setAccounts(accountData);
       setCategories(catData);
       
       // Default to first user if available
       if (userData.length > 0) {
-        setFormData(prev => ({ ...prev, user_id: userData[0].id }));
+        const defaultUserId = userData[0].id;
+        setFormData(prev => ({ ...prev, user_id: defaultUserId }));
+        accountService.getAll(defaultUserId).then((accountData) => setAccounts(accountData));
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!formData.user_id) {
+      setAccounts([]);
+      setFormData(prev => ({ ...prev, from_account_id: '', to_account_id: '' }));
+      return;
+    }
+
+    accountService.getAll(parseInt(formData.user_id)).then((accountData) => {
+      setAccounts(accountData);
+      setFormData(prev => ({ ...prev, from_account_id: '', to_account_id: '' }));
+    });
+  }, [formData.user_id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

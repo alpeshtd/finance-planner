@@ -1,7 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.jsx'
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Layout from './Layout';
@@ -15,8 +14,10 @@ import Budget from './pages/Budget.jsx';
 import Milestones from './pages/Milestones.jsx';
 import Utility from './pages/Utility.jsx';
 import HealthCare from './pages/HealthCare.jsx';
+import Settings from './pages/Settings.jsx';
 import Login from './pages/Login.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
+import { SelectedUserProvider } from './contexts/SelectedUserContext.jsx';
 
 const router = createBrowserRouter([
   {
@@ -40,13 +41,16 @@ const router = createBrowserRouter([
       { path: "emergency", element: <Emergency /> },
       { path: "users", element: <Users /> },
       { path: "utility", element: <Utility /> },
-      { path: "healthcare", element: <HealthCare /> }
+      { path: "healthcare", element: <HealthCare /> },
+      { path: "settings", element: <Settings /> }
     ],
   },
 ]);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <SelectedUserProvider>
+      <RouterProvider router={router} />
+    </SelectedUserProvider>
   </StrictMode>,
 )
