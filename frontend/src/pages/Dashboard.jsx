@@ -23,7 +23,7 @@ export default function Dashboard() {
       <header className="flex justify-between items-end">
         <div>
           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">System Status</p>
-          <h1 className="text-4xl font-black italic text-gray-900 tracking-tighter">Command Center</h1>
+          <h1 className="text-2xl font-black italic text-gray-900 tracking-tighter">Command Center</h1>
         </div>
         <div className="text-right">
           <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${insights.vibe_score === 'Good' ? 'border-emerald-500 text-emerald-600' : 'border-orange-500 text-orange-600'
