@@ -74,7 +74,7 @@ export default function Budget() {
     const monthlySurplus = data.monthly_income - data.monthly_expense - data.monthly_transfer;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-24">
+        <div className="max-w-6xl mx-auto space-y-5 pb-24">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-black italic">Control Room</h1>
                 <DateFilter onFilterChange={(newFilter) => setFilters(newFilter)} />
