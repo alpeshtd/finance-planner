@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 export default function DateFilter({ onFilterChange }) {
   const today = new Date();
@@ -25,7 +25,7 @@ export default function DateFilter({ onFilterChange }) {
   ];
 
   return (
-    <div className="flex items-center gap-4 bg-white p-2 px-4 rounded-2xl border border-gray-100 shadow-sm">
+    <div className="flex items-center gap-2 bg-white p-2 px-4 rounded-2xl border border-gray-100 shadow-sm">
       <Calendar size={16} className="text-blue-500" />
       <select 
         onChange={(e) => onFilterChange(JSON.parse(e.target.value))}
@@ -35,7 +35,6 @@ export default function DateFilter({ onFilterChange }) {
           <option key={i} value={JSON.stringify(opt.value)}>{opt.label}</option>
         ))}
       </select>
-      <ChevronDown size={14} className="text-gray-400" />
     </div>
   );
 }

@@ -74,14 +74,14 @@ export default function Budget() {
     const monthlySurplus = data.monthly_income - data.monthly_expense - data.monthly_transfer;
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-24">
+        <div className="max-w-6xl mx-auto space-y-5 pb-24">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-black italic">Control Room</h1>
                 <DateFilter onFilterChange={(newFilter) => setFilters(newFilter)} />
             </div>
 
             {/* --- HEADER: AUTOMATED INCOME --- */}
-            <header className="flex justify-between items-center bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-50">
+            <header className="flex justify-between items-center bg-white p-4 rounded-[1rem] shadow-sm border border-gray-50">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight">Allocation Command</h1>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Detected from Savings Accounts</p>
@@ -117,7 +117,7 @@ export default function Budget() {
             </div>
 
             {/* --- GAP ANALYSIS: THE INVESTMENT VELOCITY --- */}
-            <div className="bg-gray-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
+            <div className="bg-gray-900 rounded-[1.5rem] p-5 text-white relative overflow-hidden shadow-2xl">
                 <div className="relative z-10">
                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-2">Wealth Velocity</p>
                     <h2 className="text-4xl font-bold italic">
@@ -130,9 +130,9 @@ export default function Budget() {
             </div>
 
             {/* --- ROOT CARDS: DYNAMIC PERCENTAGES --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {data.buckets.map(bucket => (
-                    <div key={bucket.name} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div key={bucket.name} className="bg-white p-4 rounded-[1rem] border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-6">
                             <div className="p-4 bg-gray-50 rounded-2xl text-blue-600">
                                 <Wallet size={20} />

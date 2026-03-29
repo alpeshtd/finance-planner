@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { utilityServices } from './services/utilityServices';
 import { useSelectedUser } from './contexts/SelectedUserContext.jsx';
+import { Menu } from 'lucide-react';
 
 export default function Layout() {
   // 1. Create the 'switch' (state)
@@ -79,14 +80,14 @@ export default function Layout() {
       <div className="flex-1 flex flex-col">
         
         {/* MOBILE TOP BAR */}
-        <header className="md:hidden bg-white p-4 shadow-sm flex justify-between items-center z-30">
+        <header className="md:hidden bg-white p-2 shadow-sm flex justify-between items-center z-30">
           <span className="font-bold text-blue-600">Personal Finance</span>
           {/* 5. THE BUTTON (Flipping the switch) */}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="p-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
-            {isMenuOpen ? 'Close' : 'Menu'}
+            <Menu size={20} className="text-gray-600" />
           </button>
         </header>
 
