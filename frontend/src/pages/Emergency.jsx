@@ -49,11 +49,24 @@ export default function Emergency() {
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Goal: 6 Months</span>
             <span className="text-lg font-black text-gray-900">₹{data.total_emergency_cash.toLocaleString()}</span>
           </div>
-          <span className="text-sm font-black text-blue-600 italic">Target: ₹{data.target_fund.toLocaleString()}</span>
+          <div className="text-right">
+            <span className="text-sm font-black text-blue-600 italic">Target: ₹{data.target_fund.toLocaleString()}</span>
+            <div className='flex gap-2'>{data.category_distribution && Object.keys(data.category_distribution).length > 0 && Object.keys(data.category_distribution).map((key) => (
+              <div className="mt-2 flex gap-1">
+                <p className="text-xs font-bold text-gray-500 tracking-wider">
+                  {key}:
+                </p>
+                <p className="text-xs font-black text-gray-900">
+                  ₹{data.category_distribution[key].toLocaleString()}
+                </p>
+              </div>
+            ))}
+            </div>
+          </div>
         </div>
         <div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden shadow-inner">
-          <div 
-            className="bg-blue-600 h-full transition-all duration-1000" 
+          <div
+            className="bg-blue-600 h-full transition-all duration-1000"
             style={{ width: `${data.progress_percent}%` }}
           />
         </div>

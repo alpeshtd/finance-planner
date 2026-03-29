@@ -214,34 +214,6 @@ def get_categories(db: Session = Depends(get_db)):
     # This returns the tree structure for your React dropdowns
     return db.query(models.Category).all()
 
-@router.get("/emergency-fund/status")
-def get_ef_status(db: Session = Depends(get_db)):
-    fund = db.query(models.EmergencyFund).first()
-    if not fund:
-        return {"msg": "Emergency fund not configured"}
-    
-    # Calculate current balance from accounts tagged as 'EMERGENCY'
-    accounts = db.query(models.Account).filter(models.Account.purpose == "EMERGENCY").all()
-    current_balance = sum(acc.balance for acc in accounts)
-    
-    return {
-        "target": fund.target_amount,
-        "current": current_balance,
-        "is_full": current_balance >= fund.target_amount,
-        "gap": max(0, fund.target_amount - current_balance)
-    }
-
-@router.post("/emergency-fund/setup")
-def setup_ef(amount: float, db: Session = Depends(get_db)):
-    fund = db.query(models.EmergencyFund).first()
-    if fund:
-        fund.target_amount = amount
-    else:
-        fund = models.EmergencyFund(target_amount=amount)
-        db.add(fund)
-    db.commit()
-    return fund
-
 @router.post("/transactions/", response_model=schemas.TransactionCreate)
 def create_transaction(transaction: schemas.TransactionCreate, db: Session = Depends(get_db)):
     # 1. Create the database object
@@ -529,6 +501,26 @@ def get_budget_dashboard(
         ]
     }
 
+def calculate_allocation(category_name, target_fund, db: Session):
+    category = (
+        db.query(models.Category)
+        .filter(models.Category.name == category_name)
+        .first()
+    )
+
+    if not category or not category.children:
+        return {}
+
+    total_percentage = sum(child.percentage or 0 for child in category.children)
+
+    if total_percentage != 100:
+        raise ValueError("Total percentage must be 100")
+
+    return {
+        child.name: round((child.percentage / 100) * target_fund, 2)
+        for child in category.children
+    }
+
 @router.get("/emergency/status")
 def get_emergency_radar(db: Session = Depends(get_db)):
     # 1. Identify Safety Net Accounts (Emergency Purpose OR Liquid Funds)
@@ -554,12 +546,15 @@ def get_emergency_radar(db: Session = Depends(get_db)):
     runway_months = round(total_emergency_cash / avg_monthly_expense, 1) if avg_monthly_expense > 0 else 0
     target_fund = avg_monthly_expense * 6 # 6-month safety net goal
 
+    category = calculate_allocation("Emergency", target_fund, db)
+
     return {
         "avg_monthly_expense": avg_monthly_expense,
         "total_emergency_cash": total_emergency_cash,
         "runway_months": runway_months,
         "target_fund": target_fund,
         "progress_percent": min((total_emergency_cash / target_fund) * 100, 100) if target_fund > 0 else 0,
+        "category_distribution": category,
         "safety_nets": [
             {
                 "id": acc.id,
