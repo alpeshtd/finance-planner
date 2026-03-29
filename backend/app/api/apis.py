@@ -708,7 +708,14 @@ def delete_milestone(milestone_id: int, db: Session = Depends(get_db)):
 # ----------- HELPERS -----------
 
 def is_valid_date(text):
-    return bool(re.match(r"\d{2}\.\d{2}\.\d{4}", text))
+    # Simple regex for DD.MM.YYYY format
+    if bool(re.match(r"\d{2}\.\d{2}\.\d{4}", text)):
+        return True
+    # for DD MMM YYYY format, you can use:
+    if bool(re.match(r"\d{2} [A-Za-z]{3} \d{4}", text)):
+        return True
+    return False
+
 
 def parse_amount(prev_balance, current_balance, withdrawal, deposit):
     # ✅ First transaction → use extracted values
@@ -841,6 +848,102 @@ def parse_transactions(pdf_stream):
 
     return transactions
 
+
+def extract_amounts_kotak(parts):
+    numbers = []
+
+    for p in parts:
+        if re.match(r"^(?:\d+\.\d{2}|\d{1,3}(?:,\d{3})+\.\d{2}|\d{1,3}(?:,\d{2})+(?:,\d{3})\.\d{2})$", p):
+            p = p.replace(",", "")
+            numbers.append(p)
+
+    if not numbers:
+        return "", "", 0.0
+
+    balance = float(numbers[-1])
+
+    withdrawal = ""
+    deposit = ""
+
+    if len(numbers) == 2:
+        # Only one amount + balance (we will decide later using balance diff)
+        withdrawal = numbers[0]
+
+    elif len(numbers) >= 3:
+        # ✅ Correct order for ICICI
+        withdrawal = numbers[-2]
+        deposit = numbers[-2]
+
+    return withdrawal, deposit, balance
+
+def parse_transactions_kotak(pdf_stream):
+    transactions = []
+
+    with pdfplumber.open(pdf_stream) as pdf:
+        prev_balance = None  # ✅ track previous balance
+
+        for page in pdf.pages:
+            words = page.extract_text()
+
+            if not words:
+                continue
+
+            lines = words.split("\n")
+
+            current = None
+
+            for line in lines:
+                parts = line.split()
+                # 🚀 Detect start of transaction
+                # print(parts)
+                if len(parts) >= 4 and parts[0].isdigit() and is_valid_date(parts[1] + " " + parts[2] + " " + parts[3]):
+
+                    if current:
+                        transactions.append(current)
+
+                    month_map = {
+                        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+                        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+                        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12"
+                    }
+
+                    day = parts[1]
+                    month = month_map[parts[2]]
+                    year = parts[3]
+
+                    date = f"{day}.{month}.{year}"
+
+                    withdrawal, deposit, balance = extract_amounts_kotak(parts)
+
+                    description = " ".join(parts[2:])
+                    # description = re.sub(r"\d+(\.\d{1,2})?$", "", description).strip()
+
+                    current = {
+                        "date": date,
+                        "description": clean_text(description),
+                        "amount": 0.0,  # temp
+                        "balance": balance,
+                        "category": categorize(description),
+                    }
+
+                    # ✅ FIX: correct signed amount using balance diff
+                    current["amount"] = parse_amount(
+                        prev_balance,
+                        balance,
+                        withdrawal,
+                        deposit
+                    )
+                    prev_balance = balance  # update for next txn
+
+                else:
+                    if current:
+                        current["description"] += " " + clean_text(line)
+
+            if current:
+                transactions.append(current)
+
+    return transactions
+
 def generate_summary(transactions):
     summary = {}
 
@@ -867,6 +970,9 @@ async def upload_pdf(file: UploadFile = File(...)):
     pdf_stream = io.BytesIO(contents)
 
     transactions = parse_transactions(pdf_stream)
+
+    if not transactions:
+        transactions = parse_transactions_kotak(pdf_stream)
 
     if not transactions:
         return {"success": False, "message": "No transactions found"}

@@ -17,6 +17,7 @@ export default function Utility() {
     const [accounts, setAccounts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
+    const [manualEntry, setManualEntry] = useState(null);
 
     const [commonFormData, setCommonFormData] = useState({
         user_id: '',
@@ -71,8 +72,11 @@ export default function Utility() {
             utilityServices.create(
                 formData,
             ).then((res) => {
-                if(res.transactions?.length) {
-                    const temp = res.transactions.map((trx)=>{
+                if (res.transactions?.length) {
+                    const allTrx = [...res.transactions];
+                    const firstTrx = allTrx.shift();
+                    setManualEntry(firstTrx);
+                    const temp = allTrx.map((trx) => {
                         return {
                             selected: true,
                             added: false,
@@ -110,7 +114,7 @@ export default function Utility() {
         const newTransactions = [...transactions];
         newTransactions[index].selected = !newTransactions[index].selected;
         setTransactions(newTransactions);
-        if(!newTransactions[index].selected) {
+        if (!newTransactions[index].selected) {
             setSelectAll(false);
         }
     }
@@ -181,15 +185,26 @@ export default function Utility() {
                     <div className="flex justify-between items-center my-3">
                         <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] ml-2">Transactions</h3>
                         {!!transactions?.length && <>
-                        <span>Select All: <input type="checkbox" checked={selectAll} onChange={() => setSelectAll(!selectAll)} /></span>
-                        <span><button onClick={onDeselectAllClick}>Deselect</button></span></>}
+                            <span>Select All: <input type="checkbox" checked={selectAll} onChange={() => setSelectAll(!selectAll)} /></span>
+                            <span><button onClick={onDeselectAllClick}>Deselect</button></span></>}
                     </div>
                     <div>
+                        {manualEntry && (
+                            <div className="bg-yellow-50 p-3 my-2 rounded-2xl shadow-sm border border-yellow-200 h-fit text-sm" style={{ maxWidth: '91vw' }}>
+                                <p className="text-red-500">Please review the following transaction details and do manual entry if needed:</p>
+                                <div className="flex justify-between items-center gap-1 mt-2">
+                                    <div>Date: {manualEntry.date}</div>
+                                    <div className="font-bold">₹{manualEntry.amount}</div>
+                                </div>
+                                <div className="text-gray-400">Balance: {manualEntry.balance} | Category: {manualEntry.category}</div>
+                                <div className="text-gray-400">Description: {manualEntry.description}</div>
+                            </div>
+                        )}
                         {transactions.map((txn, index) => (
                             <div className="bg-white p-3 my-2 rounded-2xl shadow-sm border border-gray-100 h-fit" style={{ maxWidth: '91vw' }}>
                                 <div className="flex justify-between items-center">
                                     <input type="checkbox" checked={txn.selected} onChange={() => onSelectTxnToggle(index)} />
-                                {txn.added && <span><Check color="green" /> </span>}
+                                    {txn.added && <span><Check color="green" /> </span>}
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <div>
@@ -226,8 +241,8 @@ export default function Utility() {
                                     </select>
                                     <CategoryDropdown value={transactions[index].category_id} categories={categories} onChange={(value) => {
                                         const newTransactions = [...transactions];
-                                            newTransactions[index].category_id = +value;
-                                            setTransactions(newTransactions);
+                                        newTransactions[index].category_id = +value;
+                                        setTransactions(newTransactions);
                                     }} />
                                 </div>
                                 <div className="flex justify-between items-center">
