@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Download, Plus, CheckCircle, Syringe } from 'lucide-react';
+import { Clock, Download, Plus, CheckCircle, Syringe, Trash2 } from 'lucide-react';
 import { generateDiabetesReportPdf } from '../utils/diabetesPdf';
 import { healthCareServices } from '../services/healthCareServices';
 
@@ -207,7 +207,21 @@ export default function HealthCareDiabetes() {
       setShowForm(false);
     } catch (error) {
       console.error('Could not save diabetes record:', error);
-      alert('Could not save the record. Please try again.');
+      alert(`Could not save the record. ${error.response?.data?.detail || error.message || ''}`);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId) => {
+    if (!window.confirm('Delete this reading?')) {
+      return;
+    }
+    try {
+      await healthCareServices.deleteDiabetesRecord(recordId);
+      await loadAllRecords();
+      await loadRecords();
+    } catch (error) {
+      console.error('Could not delete the reading:', error);
+      alert('Unable to delete reading. Please try again.');
     }
   };
 
@@ -309,8 +323,21 @@ export default function HealthCareDiabetes() {
 
     return (
       <div className="space-y-2">
-        <div className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${readingVariantClass(record.reading_value, record.reading_type)}`}>
-          <span>{record.reading_value}</span>
+        <div className="flex items-start justify-between gap-2">
+          <div className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${readingVariantClass(record.reading_value, record.reading_type)}`}>
+            <span>{record.reading_value}</span>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteRecord(record.id);
+            }}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+            aria-label="Delete reading"
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
         <div className="flex flex-wrap gap-1 text-[11px] text-slate-500">
           {record.reading_time ? (

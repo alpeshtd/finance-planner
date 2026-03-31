@@ -38,6 +38,10 @@ export const healthCareServices = {
         const response = await api.post('/diabetes-records/', payload);
         return response.data;
     },
+    deleteDiabetesRecord: async (id) => {
+        const response = await api.delete(`/diabetes-records/${id}`);
+        return response.data;
+    },
     deleteRecord: async (id) => {
         const response = await api.delete(`/medical-reports/${id}`);
         return response.data;

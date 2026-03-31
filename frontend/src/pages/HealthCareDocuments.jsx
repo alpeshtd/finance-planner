@@ -68,11 +68,11 @@ export default function HealthCareDocuments() {
             {loading ? (
                 <p className="text-gray-500 mt-4">Loading medical records...</p>
             ) : (
-                <div className="mt-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="mt-4 bg-white rounded-2xl">
                     {records.length > 0 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {records.map(record => (
-                                <div key={record.id} className="p-3 hover:bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center rounded-xl transition-colors">
+                                <div key={record.id} className="hover:bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center rounded-xl transition-colors border border-gray-100 last:border-b-2 p-3 sm:p-4 space-y-1 sm:space-y-0">
                                     <div className="min-w-0">
                                         <p className="font-medium text-gray-900 truncate">{record.report_type}</p>
                                         <p className="text-xs text-gray-400 mt-1">{record.report_date} • {record.doctor_name} • {record.patient_name} • {record.tags}</p>

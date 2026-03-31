@@ -1118,6 +1118,17 @@ def delete_medical_record(record_id: int, db: Session = Depends(get_db)):
 
 @router.post("/diabetes-records/", response_model=schemas.DiabetesRecord)
 def create_diabetes_record(record: schemas.DiabetesRecordCreate, db: Session = Depends(get_db)):
+    existing = db.query(models.DiabetesRecord).filter(
+        models.DiabetesRecord.patient_name == record.patient_name,
+        models.DiabetesRecord.record_date == record.record_date,
+        models.DiabetesRecord.reading_type == record.reading_type,
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail='A reading of this type already exists for this patient on the selected date.',
+        )
+
     new_record = models.DiabetesRecord(
         patient_name=record.patient_name,
         record_date=record.record_date,
@@ -1133,6 +1144,16 @@ def create_diabetes_record(record: schemas.DiabetesRecordCreate, db: Session = D
     db.commit()
     db.refresh(new_record)
     return new_record
+
+
+@router.delete("/diabetes-records/{record_id}")
+def delete_diabetes_record(record_id: int, db: Session = Depends(get_db)):
+    record = db.query(models.DiabetesRecord).filter(models.DiabetesRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Diabetes record not found")
+    db.delete(record)
+    db.commit()
+    return {"message": "Diabetes record deleted successfully"}
 
 
 def parse_optional_date(value: Optional[str]) -> Optional[date]:
