@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Download, Plus, CheckCircle, Syringe, Trash2 } from 'lucide-react';
+import { Clock, Copy, Download, Plus, CheckCircle, Syringe, Trash2 } from 'lucide-react';
 import { generateDiabetesReportPdf } from '../utils/diabetesPdf';
 import { healthCareServices } from '../services/healthCareServices';
 
@@ -119,6 +119,11 @@ export default function HealthCareDiabetes() {
   const [insulinAction, setInsulinAction] = useState('none');
   const [insulinDosage, setInsulinDosage] = useState('');
   const [needleChanged, setNeedleChanged] = useState(false);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [copyRange, setCopyRange] = useState('7');
+  const [selectedReadingTypes, setSelectedReadingTypes] = useState(['fasting', 'breakfast', 'afterLunch', 'afterDinner']);
+  const [selectedMealTypes, setSelectedMealTypes] = useState(['fasting', 'breakfast', 'afterLunch', 'afterDinner']);
+  const [copyStatus, setCopyStatus] = useState('');
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -223,6 +228,87 @@ export default function HealthCareDiabetes() {
       console.error('Could not delete the reading:', error);
       alert('Unable to delete reading. Please try again.');
     }
+  };
+
+  const toggleSelection = (current, setter, value) => {
+    if (current.includes(value)) {
+      setter(current.filter((item) => item !== value));
+    } else {
+      setter([...current, value]);
+    }
+  };
+
+  const getShareText = () => {
+    const days = Number(copyRange);
+    const threshold = new Date();
+    threshold.setDate(threshold.getDate() - days + 1);
+
+    const filtered = allRecords
+      .filter((record) => new Date(record.record_date) >= threshold)
+      .sort((a, b) => new Date(a.record_date) - new Date(b.record_date) || a.id - b.id);
+
+    if (!filtered.length) {
+      return `No readings found in the last ${copyRange} days.`;
+    }
+
+    const groups = new Map();
+    filtered.forEach((record) => {
+      const key = `${record.record_date}||${record.patient_name}`;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          record_date: record.record_date,
+          patient_name: record.patient_name,
+          entries: [],
+        });
+      }
+      groups.get(key).entries.push(record);
+    });
+
+    const lines = [`Diabetes summary — last ${copyRange} days:`];
+    groups.forEach((group) => {
+      lines.push(`\n${formatDate(group.record_date)} — ${group.patient_name}`);
+      const entryByType = {};
+      group.entries.forEach((entry) => {
+        entryByType[entry.reading_type] = entry;
+      });
+
+      ['fasting', 'breakfast', 'afterLunch', 'afterDinner'].forEach((type) => {
+        const label = readingLabels[type];
+        const entry = entryByType[type];
+        if (selectedReadingTypes.includes(type) && entry) {
+          const insulin = entry.insulin_action ? `, insulin ${entry.insulin_action}${entry.insulin_dosage ? ` ${entry.insulin_dosage}` : ''}` : '';
+          const needle = entry.needle_changed ? ', needle changed' : '';
+          lines.push(`  ${label}: ${entry.reading_value} mg/dL at ${entry.reading_time || 'N/A'}${insulin}${needle}`);
+        }
+        if (selectedMealTypes.includes(type) && entry && entry.notes) {
+          lines.push(`  ${label} meal notes: ${entry.notes}`);
+        }
+      });
+    });
+
+    return lines.join('\n');
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus('Copied to clipboard');
+    } catch (error) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopyStatus('Copied to clipboard');
+    }
+  };
+
+  const handleCopySummary = async () => {
+    const text = getShareText();
+    await copyToClipboard(text);
   };
 
   const handleDownloadPdf = () => {
@@ -521,8 +607,68 @@ export default function HealthCareDiabetes() {
             <h3 className="text-lg font-semibold text-slate-900">Records</h3>
             <p className="text-sm text-slate-500">Showing {records.length} readings for the selected filters.</p>
           </div>
-          <button type="button" onClick={() => { setPeriod('all'); setCustomStart(''); setCustomEnd(''); setPatientFilter(''); setRecordTypeFilter(''); }} className="rounded-full border border-slate-300 bg-slate-100 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 transition">Reset filters</button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => setCopyModalOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+              <Copy size={16} />
+              Share
+            </button>
+            <button type="button" onClick={() => { setPeriod('all'); setCustomStart(''); setCustomEnd(''); setPatientFilter(''); setRecordTypeFilter(''); }} className="rounded-full border border-slate-300 bg-slate-100 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 transition">Reset filters</button>
+          </div>
         </div>
+        {copyModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl overflow-y-auto max-h-[85vh]">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Share selected readings</h3>
+                  <p className="text-sm text-slate-500">Choose the range, readings and meal notes to copy.</p>
+                </div>
+                <button type="button" onClick={() => setCopyModalOpen(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-900">Close</button>
+              </div>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Date range</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {['3', '7', '15', '30'].map((value) => (
+                      <button key={value} type="button" onClick={() => setCopyRange(value)} className={`rounded-full border px-3 py-2 text-sm ${copyRange === value ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-600'}`}>
+                        Last {value}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Reading types</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 grid-cols-3">
+                    {Object.entries(readingLabels).map(([key, label]) => (
+                      <label key={key} className="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="checkbox" checked={selectedReadingTypes.includes(key)} onChange={() => toggleSelection(selectedReadingTypes, setSelectedReadingTypes, key)} />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-slate-800">Meal notes</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 grid-cols-3">
+                  {Object.entries(readingLabels).map(([key, label]) => (
+                    <label key={key} className="inline-flex items-center gap-2 text-sm text-slate-700">
+                      <input type="checkbox" checked={selectedMealTypes.includes(key)} onChange={() => toggleSelection(selectedMealTypes, setSelectedMealTypes, key)} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-slate-500">{copyStatus}</div>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={() => setCopyModalOpen(false)} className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">Cancel</button>
+                  <button type="button" onClick={handleCopySummary} className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Copy summary</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-500">Loading readings...</div>
         ) : records.length === 0 ? (
