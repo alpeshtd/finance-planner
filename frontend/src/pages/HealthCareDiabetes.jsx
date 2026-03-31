@@ -272,7 +272,7 @@ export default function HealthCareDiabetes() {
     if (remaining === 0) {
       return { label: 'Needle change due now. Replace the needle.', warning: true };
     }
-    return { label: `Since last needle change: ${readingsSinceNeedleChange}. ${remaining} reading(s) until next recommended change.`, warning: false };
+    return { label: `Since last needle change: ${readingsSinceNeedleChange}. Reading(s) until next recommended change: ${remaining}.`, warning: false };
   }, [allRecords.length, latestNeedleChange, readingsSinceNeedleChange]);
 
   const latestInsulin = useMemo(() => {
@@ -315,7 +315,7 @@ export default function HealthCareDiabetes() {
   const renderReadingCell = (record) => {
     if (!record) {
       return (
-        <span className="inline-flex min-w-[90px] items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
+        <span className="min-w-[90px] text-slate-500">
           —
         </span>
       );
@@ -363,7 +363,7 @@ export default function HealthCareDiabetes() {
   };
 
   const renderMealCell = (record) => (
-    <div className="rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
+    <div className="max-w-30 text-sm text-slate-600">
       {record?.notes ? record.notes : '-'}
     </div>
   );
@@ -507,9 +507,9 @@ export default function HealthCareDiabetes() {
           const label = readingLabels[key];
           const stat = key === 'fasting' ? selectedStats.fasting : key === 'breakfast' ? selectedStats.breakfast : key === 'afterLunch' ? selectedStats.afterLunch : selectedStats.afterDinner;
           return (
-            <div key={key} className="rounded-3xl bg-slate-50 p-4">
+            <div key={key} className={`rounded-3xl p-4 bg-slate-50`}>
               <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-              <p className="mt-3 text-xl font-semibold text-slate-900">{stat.average}</p>
+              <p className={`mt-3 text-xl font-semibold bg-slate-50 ${readingVariantClass(stat.average, key)}`}>{stat.average}</p>
               <p className="mt-2 text-xs text-slate-500">Low: {stat.low} · High: {stat.high}</p>
             </div>
           );
@@ -528,7 +528,7 @@ export default function HealthCareDiabetes() {
         ) : records.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-500">No readings found for this period.</div>
         ) : (
-          <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm" style={{ maxWidth: '87vw' }}>
+          <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm" style={{ maxWidth: '78vw' }}>
             <table className="min-w-max border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50 text-left text-[10px] uppercase tracking-wide text-slate-500">
