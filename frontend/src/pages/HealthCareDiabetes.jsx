@@ -528,7 +528,7 @@ export default function HealthCareDiabetes() {
         ) : records.length === 0 ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-500">No readings found for this period.</div>
         ) : (
-          <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm" style={{ maxWidth: '78vw' }}>
+          <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm" style={{ maxWidth: '80vw' }}>
             <table className="min-w-max border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50 text-left text-[10px] uppercase tracking-wide text-slate-500">
