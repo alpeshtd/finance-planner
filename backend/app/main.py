@@ -8,6 +8,9 @@ from .db.database import Base, engine
 from .db import models  # ensure models are imported so they are registered with SQLAlchemy
 from fastapi.middleware.cors import CORSMiddleware
 
+# Schema is now managed by Alembic migrations
+# Base.metadata.create_all(bind=engine)
+
 import cloudinary
 import cloudinary.uploader
 

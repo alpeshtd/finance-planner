@@ -69,7 +69,11 @@ export default function Layout() {
           <Link to="/milestones" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Milestones</Link>
           <Link to="/users" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Users</Link>
           <Link to="/utility" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Utility</Link>
-          <Link to="/healthcare" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Health Care</Link>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-2">
+            <Link to="/healthcare" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Health Care</Link>
+            <Link to="/healthcare/documents" onClick={closeMenu} className="block pl-3 ml-4 rounded-lg hover:bg-blue-50">Documents</Link>
+            <Link to="/healthcare/diabetes" onClick={closeMenu} className="block pl-3 ml-4 rounded-lg hover:bg-blue-50">Diabetes</Link>
+          </div>
           <Link to="/settings" onClick={closeMenu} className="block p-3 rounded-lg hover:bg-blue-50">Settings</Link>
           <button className="block w-full text-left p-3 rounded-lg text-red-600 hover:bg-red-50" onClick={handleLogout}>Logout</button>
           <button className="block w-full text-left p-3 rounded-lg hover:bg-blue-50" onClick={refreshClickHandle}>Refresh BE</button>

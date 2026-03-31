@@ -1114,3 +1114,73 @@ def delete_medical_record(record_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error during deletion: {str(e)}")
+
+
+@router.post("/diabetes-records/", response_model=schemas.DiabetesRecord)
+def create_diabetes_record(record: schemas.DiabetesRecordCreate, db: Session = Depends(get_db)):
+    new_record = models.DiabetesRecord(
+        patient_name=record.patient_name,
+        record_date=record.record_date,
+        reading_type=record.reading_type,
+        reading_value=record.reading_value,
+        reading_time=record.reading_time,
+        notes=record.notes,
+        insulin_action=record.insulin_action,
+        insulin_dosage=record.insulin_dosage,
+        needle_changed=record.needle_changed,
+    )
+    db.add(new_record)
+    db.commit()
+    db.refresh(new_record)
+    return new_record
+
+
+def parse_optional_date(value: Optional[str]) -> Optional[date]:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(status_code=422, detail=f"Invalid date format: {value}. Expected YYYY-MM-DD.")
+
+
+@router.get("/diabetes-records/")
+def get_diabetes_records(
+    period: str = "month",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    patient_name: Optional[str] = None,
+    reading_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.DiabetesRecord)
+
+    if patient_name:
+        term = patient_name.lower().strip()
+        query = query.filter(models.DiabetesRecord.patient_name.ilike(f"%{term}%"))
+
+    if reading_type:
+        query = query.filter(models.DiabetesRecord.reading_type == reading_type)
+
+    parsed_start = parse_optional_date(start_date)
+    parsed_end = parse_optional_date(end_date)
+
+    if period == "week":
+        parsed_start = date.today() - timedelta(days=7)
+        parsed_end = date.today()
+    elif period == "month":
+        parsed_start = date.today() - timedelta(days=30)
+        parsed_end = date.today()
+    elif period == "all":
+        parsed_start = None
+        parsed_end = None
+
+    if period == "custom" and parsed_start and parsed_end:
+        pass
+
+    if parsed_start:
+        query = query.filter(models.DiabetesRecord.record_date >= parsed_start)
+    if parsed_end:
+        query = query.filter(models.DiabetesRecord.record_date <= parsed_end)
+
+    return query.order_by(models.DiabetesRecord.record_date.desc(), models.DiabetesRecord.id.desc()).all()

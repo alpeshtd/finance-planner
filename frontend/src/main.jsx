@@ -14,6 +14,9 @@ import Budget from './pages/Budget.jsx';
 import Milestones from './pages/Milestones.jsx';
 import Utility from './pages/Utility.jsx';
 import HealthCare from './pages/HealthCare.jsx';
+import HealthCareDocuments from './pages/HealthCareDocuments.jsx';
+import HealthCareDiabetes from './pages/HealthCareDiabetes.jsx';
+import HealthCareOverview from './pages/HealthCareOverview.jsx';
 import Settings from './pages/Settings.jsx';
 import Login from './pages/Login.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
@@ -41,7 +44,15 @@ const router = createBrowserRouter([
       { path: "emergency", element: <Emergency /> },
       { path: "users", element: <Users /> },
       { path: "utility", element: <Utility /> },
-      { path: "healthcare", element: <HealthCare /> },
+      {
+        path: "healthcare",
+        element: <HealthCare />,
+        children: [
+          { index: true, element: <HealthCareOverview /> },
+          { path: "documents", element: <HealthCareDocuments /> },
+          { path: "diabetes", element: <HealthCareDiabetes /> }
+        ]
+      },
       { path: "settings", element: <Settings /> }
     ],
   },

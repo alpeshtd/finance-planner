@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Column, Boolean # Added Boolean
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Boolean, Enum
 from sqlalchemy.orm import relationship
 from .database import Base
 import enum
-from sqlalchemy import Enum
+from datetime import datetime
 
 class AccountType(str, enum.Enum):
     SAVINGS = "SAVINGS"
@@ -93,3 +93,19 @@ class MedicalRecord(Base):
     cloudinary_url = Column(String) # The "secure_url" from Cloudinary
     public_id = Column(String) # Needed if you ever want to delete the file
     is_critical = Column(Boolean, default=False)
+
+
+class DiabetesRecord(Base):
+    __tablename__ = "diabetes_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_name = Column(String, nullable=False)
+    record_date = Column(Date, nullable=False)
+    reading_type = Column(String, nullable=False)
+    reading_value = Column(Float, nullable=False)
+    reading_time = Column(String, nullable=False)
+    notes = Column(String, nullable=True)
+    insulin_action = Column(String, nullable=True)
+    insulin_dosage = Column(String, nullable=True)
+    needle_changed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

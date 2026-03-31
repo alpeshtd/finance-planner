@@ -22,6 +22,22 @@ export const healthCareServices = {
         });
         return response.data;
     },
+    getDiabetesRecords: async ({ period = 'month', startDate, endDate, patientName, readingType }) => {
+        const response = await api.get('/diabetes-records/', {
+            params: {
+                period,
+                start_date: startDate,
+                end_date: endDate,
+                patient_name: patientName,
+                reading_type: readingType,
+            }
+        });
+        return response.data;
+    },
+    addDiabetesRecord: async (payload) => {
+        const response = await api.post('/diabetes-records/', payload);
+        return response.data;
+    },
     deleteRecord: async (id) => {
         const response = await api.delete(`/medical-reports/${id}`);
         return response.data;

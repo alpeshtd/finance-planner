@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, List
 from .models import TransactionType
 
@@ -93,5 +93,27 @@ class MilestoneCreate(MilestoneBase):
 
 class Milestone(MilestoneBase):
     id: int
+    class Config:
+        from_attributes = True
+
+
+class DiabetesRecordBase(BaseModel):
+    patient_name: str
+    record_date: date
+    reading_type: str
+    reading_value: float
+    reading_time: str
+    notes: Optional[str] = None
+    insulin_action: Optional[str] = None
+    insulin_dosage: Optional[str] = None
+    needle_changed: Optional[bool] = False
+
+class DiabetesRecordCreate(DiabetesRecordBase):
+    pass
+
+class DiabetesRecord(DiabetesRecordBase):
+    id: int
+    created_at: datetime
+
     class Config:
         from_attributes = True
