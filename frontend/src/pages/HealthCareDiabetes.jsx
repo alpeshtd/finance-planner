@@ -108,34 +108,58 @@ const buildStats = (records, field) => {
 
 const buildChartData = (records) => {
   const readingTypes = ['fasting', 'breakfast', 'afterLunch', 'afterDinner'];
-  const grouped = records.reduce((acc, record) => {
+  const sortedRecords = [...records]
+    .filter((record) => {
+      const type = record.reading_type;
+      const value = Number(record.reading_value);
+      return Number.isFinite(value) && readingTypes.includes(type);
+    })
+    .sort((a, b) => new Date(a.record_date) - new Date(b.record_date));
+
+  const totals = {
+    fasting: 0,
+    breakfast: 0,
+    afterLunch: 0,
+    afterDinner: 0,
+  };
+  const counts = {
+    fasting: 0,
+    breakfast: 0,
+    afterLunch: 0,
+    afterDinner: 0,
+  };
+  const lastValues = {
+    fasting: null,
+    breakfast: null,
+    afterLunch: null,
+    afterDinner: null,
+  };
+
+  const dateGroups = sortedRecords.reduce((acc, record) => {
     const dateKey = record.record_date;
-    const type = record.reading_type;
-    const value = Number(record.reading_value);
-    if (!Number.isFinite(value) || !readingTypes.includes(type)) return acc;
-
-    if (!acc[dateKey]) {
-      acc[dateKey] = { date: formatDate(dateKey) };
-      readingTypes.forEach((readingType) => {
-        acc[dateKey][`${readingType}_total`] = 0;
-        acc[dateKey][`${readingType}_count`] = 0;
-      });
-    }
-
-    acc[dateKey][`${type}_total`] += value;
-    acc[dateKey][`${type}_count`] += 1;
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(record);
     return acc;
   }, {});
 
-  return Object.keys(grouped)
+  return Object.keys(dateGroups)
     .sort((a, b) => new Date(a) - new Date(b))
     .map((dateKey) => {
-      const item = { date: grouped[dateKey].date };
-      ['fasting', 'breakfast', 'afterLunch', 'afterDinner'].forEach((type) => {
-        const total = grouped[dateKey][`${type}_total`];
-        const count = grouped[dateKey][`${type}_count`];
-        item[type] = count ? Number((total / count).toFixed(1)) : null;
+      dateGroups[dateKey].forEach((record) => {
+        const readingType = record.reading_type;
+        const value = Number(record.reading_value);
+        totals[readingType] += value;
+        counts[readingType] += 1;
       });
+
+      const item = { date: formatDate(dateKey) };
+      readingTypes.forEach((type) => {
+        if (counts[type] > 0) {
+          lastValues[type] = Number((totals[type] / counts[type]).toFixed(1));
+        }
+        item[type] = lastValues[type];
+      });
+
       return item;
     });
 };
@@ -681,7 +705,7 @@ export default function HealthCareDiabetes() {
               <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis domain={[80, 'auto']} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                 <Tooltip formatter={(value) => [`${value} mg/dL`, 'Average']} />
                 <Legend verticalAlign="top" height={24} wrapperStyle={{ fontSize: 12 }} />
                 <Line type="monotone" dataKey="fasting" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} name="Fasting" />
