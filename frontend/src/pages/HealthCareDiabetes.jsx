@@ -340,13 +340,14 @@ export default function HealthCareDiabetes() {
   const latestNeedleChange = useMemo(() => {
     const sorted = [...allRecords]
       .filter((record) => record.needle_changed)
-      .sort((a, b) => new Date(b.record_date) - new Date(a.record_date));
+      .sort((a, b) => parseRecordDateTime(b) - parseRecordDateTime(a));
     return sorted[0] || null;
   }, [allRecords]);
 
   const readingsSinceNeedleChange = useMemo(() => {
     if (!latestNeedleChange) return allRecords.length;
-    return allRecords.filter((record) => new Date(record.record_date) > new Date(latestNeedleChange.record_date)).length;
+    const latestChangeTime = parseRecordDateTime(latestNeedleChange);
+    return allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime).length;
   }, [allRecords, latestNeedleChange]);
 
   const needleStatus = useMemo(() => {
