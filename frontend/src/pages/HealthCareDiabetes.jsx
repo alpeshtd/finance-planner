@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Clock, Copy, Download, Plus, CheckCircle, Syringe, Trash2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { generateDiabetesReportPdf } from '../utils/diabetesPdf';
 import { healthCareServices } from '../services/healthCareServices';
 
@@ -103,6 +104,40 @@ const buildStats = (records, field) => {
     low: Math.min(...values),
     high: Math.max(...values),
   };
+};
+
+const buildChartData = (records) => {
+  const readingTypes = ['fasting', 'breakfast', 'afterLunch', 'afterDinner'];
+  const grouped = records.reduce((acc, record) => {
+    const dateKey = record.record_date;
+    const type = record.reading_type;
+    const value = Number(record.reading_value);
+    if (!Number.isFinite(value) || !readingTypes.includes(type)) return acc;
+
+    if (!acc[dateKey]) {
+      acc[dateKey] = { date: formatDate(dateKey) };
+      readingTypes.forEach((readingType) => {
+        acc[dateKey][`${readingType}_total`] = 0;
+        acc[dateKey][`${readingType}_count`] = 0;
+      });
+    }
+
+    acc[dateKey][`${type}_total`] += value;
+    acc[dateKey][`${type}_count`] += 1;
+    return acc;
+  }, {});
+
+  return Object.keys(grouped)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .map((dateKey) => {
+      const item = { date: grouped[dateKey].date };
+      ['fasting', 'breakfast', 'afterLunch', 'afterDinner'].forEach((type) => {
+        const total = grouped[dateKey][`${type}_total`];
+        const count = grouped[dateKey][`${type}_count`];
+        item[type] = count ? Number((total / count).toFixed(1)) : null;
+      });
+      return item;
+    });
 };
 
 export default function HealthCareDiabetes() {
@@ -369,6 +404,37 @@ export default function HealthCareDiabetes() {
     return sorted[0] || null;
   }, [allRecords]);
 
+  const chartData = useMemo(() => {
+    const filtered = [...allRecords].filter((record) => {
+      const recordDate = new Date(record.record_date);
+      let startDate = null;
+      let endDate = null;
+
+      if (period === 'week') {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 6);
+        endDate = new Date();
+      } else if (period === 'month') {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 29);
+        endDate = new Date();
+      } else if (period === 'custom') {
+        startDate = customStart ? new Date(customStart) : null;
+        endDate = customEnd ? new Date(customEnd) : null;
+      }
+
+      if (patientFilter) {
+        const term = patientFilter.toLowerCase().trim();
+        if (!record.patient_name.toLowerCase().includes(term)) return false;
+      }
+
+      if (startDate && recordDate < startDate) return false;
+      if (endDate && recordDate > endDate) return false;
+      return true;
+    });
+    return buildChartData(filtered);
+  }, [allRecords, period, customStart, customEnd, patientFilter]);
+
   const recordsWithInsulinState = useMemo(() => applyInsulinFlow(records), [records]);
 
   const groupedRecords = useMemo(() => {
@@ -601,6 +667,33 @@ export default function HealthCareDiabetes() {
             </div>
           );
         })}
+      </div>
+      <div className="">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Average readings chart</h3>
+            <p className="text-sm text-slate-500">Shows average reading value across all types for the selected timeframe.</p>
+          </div>
+        </div>
+        <div className="mt-4 h-72">
+          {chartData.length ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(value) => [`${value} mg/dL`, 'Average']} />
+                <Legend verticalAlign="top" height={24} wrapperStyle={{ fontSize: 12 }} />
+                <Line type="monotone" dataKey="fasting" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} name="Fasting" />
+                <Line type="monotone" dataKey="breakfast" stroke="#f97316" strokeWidth={2} dot={{ r: 3 }} name="Breakfast" />
+                <Line type="monotone" dataKey="afterLunch" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} name="After lunch" />
+                <Line type="monotone" dataKey="afterDinner" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="After dinner" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-slate-500">No chart data available for the selected timeframe.</div>
+          )}
+        </div>
       </div>
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
