@@ -836,7 +836,7 @@ export default function HealthCareDiabetes() {
                 </div>
                 <button type="button" onClick={() => setShowDisplayOptions(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-900">Close</button>
               </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-2">
                 {[
                   { key: 'date', label: 'Date' },
                   { key: 'patientName', label: 'Patient name' },
@@ -849,7 +849,7 @@ export default function HealthCareDiabetes() {
                   { key: 'lunchMeal', label: 'Lunch meal' },
                   { key: 'dinnerMeal', label: 'Dinner meal' },
                 ].map((option) => (
-                  <label key={option.key} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                  <label key={option.key} className="inline-flex items-center gap-2 px-2 py-2 text-sm text-slate-700">
                     <input type="checkbox" checked={displayOptions[option.key]} onChange={() => toggleDisplayOption(option.key)} className="h-4 w-4 rounded border-slate-300 text-blue-600" />
                     {option.label}
                   </label>
