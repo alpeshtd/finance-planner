@@ -2,7 +2,7 @@ import { use, useEffect, useState } from 'react';
 import { transactionService } from '../services/transactionService';
 import TransactionForm from '../components/TransactionForm'; // Import your new form
 import DateFilter from '../components/DateFilter';
-import { FileTerminal, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { FileTerminal, SlidersHorizontal, Trash2, Info, X } from 'lucide-react';
 import { userService } from '../services/userService';
 import { accountService } from '../services/accountService';
 import { categoryService } from '../services/catServices';
@@ -27,6 +27,8 @@ export default function Transactions() {
   const [users, setUsers] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [params] = useSearchParams();
   const paramCategory_id = params.get('category_id');
   const paramStart = params.get('start');
@@ -90,6 +92,16 @@ export default function Transactions() {
     }
   };
 
+  const handleShowDetails = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedTransaction(null);
+    setShowDetailModal(false);
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -118,11 +130,20 @@ export default function Transactions() {
           <div className="divide-y divide-gray-50">
             {transactions.map((t) => (
               <div key={t.id} className="p-4 hover:bg-gray-50 flex justify-between items-center transition-colors group">
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-900" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '20ch' }}>{t.note || 'Untitled Transaction'}</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900 truncate" style={{ maxWidth: '20ch' }}>{t.note || 'Untitled Transaction'}</span>
+                    <button
+                      onClick={() => handleShowDetails(t)}
+                      className="rounded-full border border-slate-200 bg-white text-slate-500 hover:border-blue-300 hover:text-blue-600 transition"
+                      aria-label="View transaction details"
+                    >
+                      <Info size={12} />
+                    </button>
+                  </div>
                   <span className="text-xs text-gray-400">{t.date} • {users.find(u => u.id === t.user_id)?.name || 'Unknown'} • {categories.find(c => c.id === t.category_id)?.name || (t.type === 'INCOME' ? '' : 'Unknown')}</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 ml-4">
                   <span className={`font-bold ${TransactionCss[t.type]}`}>
                     {t.type === 'EXPENSE' ? '-' : '+'} ₹{t.amount.toLocaleString()}
                   </span>
@@ -152,6 +173,56 @@ export default function Transactions() {
             setShowForm(false);
           }}
         />
+      )}
+      {showDetailModal && selectedTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-xl rounded-3xl bg-white p-5 shadow-xl overflow-y-auto max-h-[80vh]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Transaction details</h3>
+                <p className="text-xs text-slate-500">Quick overview of this transaction.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseDetails}
+                className="rounded-full border border-slate-200 bg-slate-50 p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
+                aria-label="Close details"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-3">
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Date</p>
+                <p className="text-xs text-slate-900">{selectedTransaction.date}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Amount</p>
+                <p className="text-xs text-slate-900">{selectedTransaction.type === 'EXPENSE' ? '-' : '+'} ₹{selectedTransaction.amount.toLocaleString()}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Type</p>
+                <p className="text-xs text-slate-900">{selectedTransaction.type}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Category</p>
+                <p className="text-xs text-slate-900">{categories.find((c) => c.id === selectedTransaction.category_id)?.name || 'Unknown'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Account</p>
+                <p className="text-xs text-slate-900">{accounts.find((a) => a.id === selectedTransaction.account_id)?.name || 'Unknown'}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">User</p>
+                <p className="text-xs text-slate-900">{users.find((u) => u.id === selectedTransaction.user_id)?.name || 'Unknown'}</p>
+              </div>
+              <div className="sm:col-span-3 space-y-1">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Note</p>
+                <p className="text-xs text-slate-900">{selectedTransaction.note || 'No note provided'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       {showFilters && (
         <TransactionFilters
