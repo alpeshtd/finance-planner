@@ -354,9 +354,9 @@ export default function HealthCareDiabetes() {
     if (!latestNeedleChange) {
       return { label: `Needle change not tracked yet. ${allRecords.length} readings recorded.`, warning: allRecords.length >= 8 };
     }
-    const remaining = Math.max(0, 8 - readingsSinceNeedleChange);
+    const remaining = Math.max(0, 10 - readingsSinceNeedleChange);
     if (remaining === 0) {
-      return { label: 'Needle change due now. Replace the needle.', warning: true };
+      return { label: `Needle change due now (${readingsSinceNeedleChange} readings recorded). Replace the needle.`, warning: true };
     }
     return { label: `Since last needle change: ${readingsSinceNeedleChange}. Reading(s) until next recommended change: ${remaining}.`, warning: false };
   }, [allRecords.length, latestNeedleChange, readingsSinceNeedleChange]);
