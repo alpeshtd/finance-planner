@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Clock, Copy, Download, Plus, CheckCircle, Syringe, Trash2 } from 'lucide-react';
+import { Clock, Copy, Download, Plus, CheckCircle, Settings, Syringe, Trash2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { generateDiabetesReportPdf } from '../utils/diabetesPdf';
 import { healthCareServices } from '../services/healthCareServices';
@@ -182,6 +182,19 @@ export default function HealthCareDiabetes() {
   const [copyRange, setCopyRange] = useState('7');
   const [selectedReadingTypes, setSelectedReadingTypes] = useState(['fasting', 'breakfast', 'afterLunch', 'afterDinner']);
   const [selectedMealTypes, setSelectedMealTypes] = useState(['fasting', 'breakfast', 'afterLunch', 'afterDinner']);
+  const [displayOptions, setDisplayOptions] = useState({
+    date: true,
+    patientName: false,
+    deleteIcon: false,
+    time: true,
+    needleMark: false,
+    insulinMark: true,
+    fastingMeal: true,
+    breakfastMeal: true,
+    lunchMeal: true,
+    dinnerMeal: true,
+  });
+  const [showDisplayOptions, setShowDisplayOptions] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
   const [period, setPeriod] = useState('month');
   const [customStart, setCustomStart] = useState('');
@@ -297,6 +310,20 @@ export default function HealthCareDiabetes() {
     }
   };
 
+  const toggleDisplayOption = (option) => {
+    setDisplayOptions((prev) => ({
+      ...prev,
+      [option]: !prev[option],
+    }));
+  };
+
+  const mealOptionKey = (type) => {
+    if (type === 'fasting') return 'fastingMeal';
+    if (type === 'breakfast') return 'breakfastMeal';
+    if (type === 'afterLunch') return 'lunchMeal';
+    return 'dinnerMeal';
+  };
+
   const getShareText = () => {
     const days = Number(copyRange);
     const threshold = new Date();
@@ -325,7 +352,11 @@ export default function HealthCareDiabetes() {
 
     const lines = [`Diabetes summary — last ${copyRange} days:`];
     groups.forEach((group) => {
-      lines.push(`\n${formatDate(group.record_date)} — ${group.patient_name}`);
+      const headerParts = [];
+      if (displayOptions.date) headerParts.push(formatDate(group.record_date));
+      if (displayOptions.patientName) headerParts.push(group.patient_name);
+      lines.push(`\n${headerParts.length ? headerParts.join(' — ') : 'Record'}`);
+
       const entryByType = {};
       group.entries.forEach((entry) => {
         entryByType[entry.reading_type] = entry;
@@ -335,11 +366,13 @@ export default function HealthCareDiabetes() {
         const label = readingLabels[type];
         const entry = entryByType[type];
         if (selectedReadingTypes.includes(type) && entry) {
-          const insulin = entry.insulin_action ? `, insulin ${entry.insulin_action}${entry.insulin_dosage ? ` ${entry.insulin_dosage}` : ''}` : '';
-          const needle = entry.needle_changed ? ', needle changed' : '';
-          lines.push(`  ${label}: ${entry.reading_value} mg/dL at ${entry.reading_time || 'N/A'}${insulin}${needle}`);
+          const timeText = displayOptions.time && entry.reading_time ? ` at ${entry.reading_time || 'N/A'}` : '';
+          const insulinText = displayOptions.insulinMark && entry.insulin_action ? `, insulin ${entry.insulin_action}${entry.insulin_dosage ? ` ${entry.insulin_dosage}` : ''}` : '';
+          const needleText = displayOptions.needleMark && entry.needle_changed ? ', needle changed' : '';
+          lines.push(`  ${label}: ${entry.reading_value} mg/dL${timeText}${insulinText}${needleText}`);
         }
-        if (selectedMealTypes.includes(type) && entry && entry.notes) {
+        const mealKey = mealOptionKey(type);
+        if (displayOptions[mealKey] && selectedMealTypes.includes(type) && entry && entry.notes) {
           lines.push(`  ${label} meal notes: ${entry.notes}`);
         }
       });
@@ -504,32 +537,34 @@ export default function HealthCareDiabetes() {
           <div className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${readingVariantClass(record.reading_value, record.reading_type)}`}>
             <span>{record.reading_value}</span>
           </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteRecord(record.id);
-            }}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
-            aria-label="Delete reading"
-          >
-            <Trash2 size={14} />
-          </button>
+          {displayOptions.deleteIcon ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteRecord(record.id);
+              }}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+              aria-label="Delete reading"
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-1 text-[11px] text-slate-500">
-          {record.reading_time ? (
+          {displayOptions.time && record.reading_time ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 shadow-sm">
               <Clock size={12} />
               {record.reading_time}
             </span>
           ) : null}
-          {(record.insulin_dosage || record.insulin_active) ? (
+          {displayOptions.insulinMark && (record.insulin_dosage || record.insulin_active) ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 shadow-sm">
               <Syringe size={12} />
               {record.insulin_dosage || `${record.insulin_active_dosage || 'active'}`}
             </span>
           ) : null}
-          {record.needle_changed ? (
+          {displayOptions.needleMark && record.needle_changed ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
               <CheckCircle size={12} />
             </span>
@@ -730,6 +765,10 @@ export default function HealthCareDiabetes() {
               <Copy size={16} />
               Share
             </button>
+            <button type="button" onClick={() => setShowDisplayOptions(true)} className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition">
+              <Settings size={16} />
+              Columns
+            </button>
             <button type="button" onClick={() => { setPeriod('all'); setCustomStart(''); setCustomEnd(''); setPatientFilter(''); setRecordTypeFilter(''); }} className="rounded-full border border-slate-300 bg-slate-100 px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 transition">Reset filters</button>
           </div>
         </div>
@@ -787,6 +826,41 @@ export default function HealthCareDiabetes() {
             </div>
           </div>
         )}
+        {showDisplayOptions && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-xl overflow-y-auto max-h-[85vh]">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Table display options</h3>
+                  <p className="text-sm text-slate-500">Choose what shows in the records table and share output.</p>
+                </div>
+                <button type="button" onClick={() => setShowDisplayOptions(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-900">Close</button>
+              </div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {[
+                  { key: 'date', label: 'Date' },
+                  { key: 'patientName', label: 'Patient name' },
+                  { key: 'time', label: 'Time' },
+                  { key: 'needleMark', label: 'Needle mark' },
+                  { key: 'insulinMark', label: 'Insulin mark' },
+                  { key: 'deleteIcon', label: 'Delete icon' },
+                  { key: 'fastingMeal', label: 'Fasting meal' },
+                  { key: 'breakfastMeal', label: 'Breakfast meal' },
+                  { key: 'lunchMeal', label: 'Lunch meal' },
+                  { key: 'dinnerMeal', label: 'Dinner meal' },
+                ].map((option) => (
+                  <label key={option.key} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    <input type="checkbox" checked={displayOptions[option.key]} onChange={() => toggleDisplayOption(option.key)} className="h-4 w-4 rounded border-slate-300 text-blue-600" />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button type="button" onClick={() => setShowDisplayOptions(false)} className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">Done</button>
+              </div>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-500">Loading readings...</div>
         ) : records.length === 0 ? (
@@ -796,15 +870,25 @@ export default function HealthCareDiabetes() {
             <table className="min-w-max border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2">Date</th>
+                  {(displayOptions.date || displayOptions.patientName) && (
+                    <th className="px-3 py-2">Date / Patient</th>
+                  )}
                   <th className="px-3 py-2">Fasting</th>
-                  <th className="px-3 py-2">Last night meal</th>
+                  {displayOptions.fastingMeal && (
+                    <th className="px-3 py-2">Last night meal</th>
+                  )}
                   <th className="px-3 py-2">Breakfast</th>
-                  <th className="px-3 py-2">Meal</th>
+                  {displayOptions.breakfastMeal && (
+                    <th className="px-3 py-2">Meal</th>
+                  )}
                   <th className="px-3 py-2">Lunch</th>
-                  <th className="px-3 py-2">Meal</th>
+                  {displayOptions.lunchMeal && (
+                    <th className="px-3 py-2">Meal</th>
+                  )}
                   <th className="px-3 py-2">Dinner</th>
-                  <th className="px-3 py-2">Meal</th>
+                  {displayOptions.dinnerMeal && (
+                    <th className="px-3 py-2">Meal</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -816,18 +900,32 @@ export default function HealthCareDiabetes() {
 
                   return (
                     <tr key={group.key} className="border-t border-slate-200 even:bg-slate-50">
-                      <td className="px-3 py-3 align-top">
-                        <p className="font-semibold text-slate-900">{formatDate(group.record_date)}</p>
-                        <p className="text-xs text-slate-500">{group.patient_name}</p>
-                      </td>
+                      {(displayOptions.date || displayOptions.patientName) && (
+                        <td className="px-3 py-3 align-top">
+                          {displayOptions.date && (
+                            <p className="font-semibold text-slate-900">{formatDate(group.record_date)}</p>
+                          )}
+                          {displayOptions.patientName && (
+                            <p className="text-xs text-slate-500">{group.patient_name}</p>
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-3 align-top">{renderReadingCell(fasting)}</td>
-                      <td className="px-3 py-3 align-top">{renderMealCell(fasting)}</td>
+                      {displayOptions.fastingMeal && (
+                        <td className="px-3 py-3 align-top">{renderMealCell(fasting)}</td>
+                      )}
                       <td className="px-3 py-3 align-top">{renderReadingCell(breakfast)}</td>
-                      <td className="px-3 py-3 align-top">{renderMealCell(breakfast)}</td>
+                      {displayOptions.breakfastMeal && (
+                        <td className="px-3 py-3 align-top">{renderMealCell(breakfast)}</td>
+                      )}
                       <td className="px-3 py-3 align-top">{renderReadingCell(lunch)}</td>
-                      <td className="px-3 py-3 align-top">{renderMealCell(lunch)}</td>
+                      {displayOptions.lunchMeal && (
+                        <td className="px-3 py-3 align-top">{renderMealCell(lunch)}</td>
+                      )}
                       <td className="px-3 py-3 align-top">{renderReadingCell(dinner)}</td>
-                      <td className="px-3 py-3 align-top">{renderMealCell(dinner)}</td>
+                      {displayOptions.dinnerMeal && (
+                        <td className="px-3 py-3 align-top">{renderMealCell(dinner)}</td>
+                      )}
                     </tr>
                   );
                 })}
