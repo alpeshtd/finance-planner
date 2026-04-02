@@ -52,11 +52,17 @@ const applyInsulinFlow = (records) => {
     return a.id - b.id;
   });
 
-  let currentState = { active: false, dosage: '', action: 'none' };
+  const insulinTypes = ['fasting', 'breakfast', 'afterLunch', 'afterDinner'];
+  const currentState = insulinTypes.reduce((acc, type) => {
+    acc[type] = { active: false, dosage: '', action: 'none' };
+    return acc;
+  }, {});
+
   const enriched = ordered.map((record) => {
-    let active = currentState.active;
-    let dosage = currentState.dosage;
-    let action = currentState.action;
+    const typeState = currentState[record.reading_type] || { active: false, dosage: '', action: 'none' };
+    let active = typeState.active;
+    let dosage = typeState.dosage;
+    let action = typeState.action;
 
     if (record.insulin_action && record.insulin_action !== 'none') {
       if (record.insulin_action === 'started' || record.insulin_action === 'adjusted') {
@@ -68,9 +74,8 @@ const applyInsulinFlow = (records) => {
         dosage = '';
         action = record.insulin_action;
       }
+      currentState[record.reading_type] = { active, dosage, action };
     }
-
-    currentState = { active, dosage, action };
 
     return {
       ...record,
