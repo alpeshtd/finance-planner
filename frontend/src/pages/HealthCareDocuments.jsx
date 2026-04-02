@@ -74,7 +74,7 @@ export default function HealthCareDocuments() {
                             {records.map(record => (
                                 <div key={record.id} className="hover:bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center rounded-xl transition-colors border border-gray-100 last:border-b-2 p-3 sm:p-4 space-y-1 sm:space-y-0">
                                     <div className="min-w-0">
-                                        <p className="font-medium text-gray-900 truncate">{record.report_type}</p>
+                                        <p className="font-medium text-gray-900 truncate text-wrap">{record.report_type}</p>
                                         <p className="text-xs text-gray-400 mt-1">{record.report_date} • {record.doctor_name} • {record.patient_name} • {record.tags}</p>
                                     </div>
                                     <div className="mt-3 sm:mt-0 flex items-center gap-3">
