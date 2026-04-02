@@ -469,11 +469,11 @@ export default function HealthCareDiabetes() {
 
       if (period === 'week') {
         startDate = new Date();
-        startDate.setDate(startDate.getDate() - 6);
+        startDate.setDate(startDate.getDate() - 8);
         endDate = new Date();
       } else if (period === 'month') {
         startDate = new Date();
-        startDate.setDate(startDate.getDate() - 29);
+        startDate.setDate(startDate.getDate() - 30);
         endDate = new Date();
       } else if (period === 'custom') {
         startDate = customStart ? new Date(customStart) : null;
