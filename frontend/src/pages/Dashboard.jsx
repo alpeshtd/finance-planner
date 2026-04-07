@@ -1,18 +1,31 @@
 import { Zap, AlertTriangle, Target, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import DateFilter from '../components/DateFilter';
 import { MilestoneCard } from '../components/MilestoneCard';
 import { useSelectedUser } from '../contexts/SelectedUserContext.jsx';
 
 export default function Dashboard() {
+  const today = new Date();
+  const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+  const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+
   const [insights, setInsights] = useState(null);
   const [milestones, setMilestones] = useState([]);
+  const [filters, setFilters] = useState({ start: defaultStart, end: defaultEnd, user_id: undefined });
   const { selectedUserId } = useSelectedUser();
 
   useEffect(() => {
-    api.get('/dashboard/insights', { params: { user_id: selectedUserId } }).then(res => setInsights(res.data));
-    api.get('/milestones/status').then(res => setMilestones(res.data));
+    setFilters((prev) => ({ ...prev, user_id: selectedUserId || undefined }));
   }, [selectedUserId]);
+
+  useEffect(() => {
+    api.get('/dashboard/insights', { params: filters }).then(res => setInsights(res.data));
+  }, [filters]);
+
+  useEffect(() => {
+    api.get('/milestones/status').then(res => setMilestones(res.data));
+  }, []);
 
   if (!insights) return <div className="p-10 text-center font-black animate-pulse text-gray-400 uppercase tracking-widest">Scanning Wealth Engine...</div>;
 
@@ -20,16 +33,19 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto space-y-8">
 
       {/* Dynamic Header with Vibe Check */}
-      <header className="flex justify-between items-end">
+      <header className="flex flex-wrap justify-between items-end gap-4">
         <div>
           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">System Status</p>
-          <h1 className="text-2xl font-black italic text-gray-900 tracking-tighter">Command Center</h1>
+          <h1 className="text-xl font-black italic text-gray-900 tracking-tighter">Command Center</h1>
         </div>
-        <div className="text-right">
-          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${insights.vibe_score === 'Good' ? 'border-emerald-500 text-emerald-600' : 'border-orange-500 text-orange-600'
-            }`}>
-            Budget Vibe: {insights.vibe_score}
-          </span>
+        <div className="flex flex-wrap items-end gap-4">
+          <DateFilter onFilterChange={(newFilter) => setFilters((prev) => ({ ...prev, ...newFilter }))} />
+          <div className="text-right">
+            {/* <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${insights.vibe_score === 'Good' ? 'border-emerald-500 text-emerald-600' : 'border-orange-500 text-orange-600'
+              }`}>
+              Budget Vibe: {insights.vibe_score}
+            </span> */}
+          </div>
         </div>
       </header>
 

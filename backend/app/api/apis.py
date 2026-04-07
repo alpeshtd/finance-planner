@@ -604,17 +604,28 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     }
 
 @router.get("/dashboard/insights")
-def get_dynamic_insights(user_id: Optional[int] = None, db: Session = Depends(get_db)):
+def get_dynamic_insights(
+    user_id: Optional[int] = None,
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    db: Session = Depends(get_db)
+):
     today = date.today()
     start_of_month = today.replace(day=1)
-    
-    # 1. Calculate Daily Velocity
-    days_passed = today.day
+    start_date = start or start_of_month
+    end_date = end or today
+    if end_date > today:
+        end_date = today
+    if start_date > end_date:
+        start_date = end_date
+
+    days_passed = max((end_date - start_date).days + 1, 1)
     user_criteria = [models.Transaction.user_id == user_id] if user_id is not None else []
 
     expenses_this_month = db.query(func.sum(models.Transaction.amount)).filter(
         models.Transaction.type == models.TransactionType.EXPENSE,
-        models.Transaction.date >= start_of_month,
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date,
         *user_criteria
     ).scalar() or 0
     daily_burn = float(expenses_this_month) / days_passed
@@ -625,14 +636,16 @@ def get_dynamic_insights(user_id: Optional[int] = None, db: Session = Depends(ge
         func.sum(models.Transaction.amount).label('total')
     ).join(models.Transaction).filter(
         models.Transaction.type == models.TransactionType.EXPENSE,
-        models.Transaction.date >= start_of_month,
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date,
         *user_criteria
     ).group_by(models.Category.name).order_by(text('total DESC')).first()
 
     # 3. Investment Consistency
     investment_total = db.query(func.sum(models.Transaction.amount)).join(models.Category).filter(
         models.Category.name.ilike("%Investment%"), # Or use your root category ID
-        models.Transaction.date >= start_of_month,
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date,
         *user_criteria
     ).scalar() or 0
 
