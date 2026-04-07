@@ -102,6 +102,10 @@ export default function Transactions() {
     setShowDetailModal(false);
   };
 
+  const selectedFromAccount = selectedTransaction ? accounts.find((a) => a.id === selectedTransaction.from_account_id)?.name : null;
+  const selectedToAccount = selectedTransaction ? accounts.find((a) => a.id === selectedTransaction.to_account_id)?.name : null;
+  const selectedAccount = selectedTransaction ? accounts.find((a) => a.id === selectedTransaction.account_id)?.name : null;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
@@ -208,10 +212,24 @@ export default function Transactions() {
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">Category</p>
                 <p className="text-xs text-slate-900">{categories.find((c) => c.id === selectedTransaction.category_id)?.name || 'Unknown'}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-[11px] uppercase tracking-wide text-slate-500">Account</p>
-                <p className="text-xs text-slate-900">{accounts.find((a) => a.id === selectedTransaction.account_id)?.name || 'Unknown'}</p>
-              </div>
+              {selectedFromAccount || selectedTransaction.from_account_id ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">From account</p>
+                  <p className="text-xs text-slate-900">{selectedFromAccount || 'Unknown'}</p>
+                </div>
+              ) : null}
+              {selectedToAccount || selectedTransaction.to_account_id ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">To account</p>
+                  <p className="text-xs text-slate-900">{selectedToAccount || 'Unknown'}</p>
+                </div>
+              ) : null}
+              {selectedAccount ? (
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Account</p>
+                  <p className="text-xs text-slate-900">{selectedAccount}</p>
+                </div>
+              ) : null}
               <div className="space-y-1">
                 <p className="text-[11px] uppercase tracking-wide text-slate-500">User</p>
                 <p className="text-xs text-slate-900">{users.find((u) => u.id === selectedTransaction.user_id)?.name || 'Unknown'}</p>
