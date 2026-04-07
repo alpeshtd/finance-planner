@@ -33,9 +33,12 @@ export function MilestoneCard({ m, onDelete }) {
             <p className="text-[10px] font-black text-gray-400 uppercase">Required Monthly</p>
             <p className="text-2xl font-black text-gray-900 italic">₹{m.monthly_required.toLocaleString()}</p>
           </div>
-          <p className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase">
-            {m.percent}% Done
-          </p>
+          <div className="text-right">
+            <p className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase">
+              {m.percent}% Done
+            </p>
+            <p className="mt-1 text-[10px] text-gray-500">Target ₹{m.target.toLocaleString()}</p>
+          </div>
         </div>
 
         <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
