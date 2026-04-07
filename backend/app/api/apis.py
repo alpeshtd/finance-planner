@@ -642,12 +642,23 @@ def get_dynamic_insights(
     ).group_by(models.Category.name).order_by(text('total DESC')).first()
 
     # 3. Investment Consistency
-    investment_total = db.query(func.sum(models.Transaction.amount)).join(models.Category).filter(
-        models.Category.name.ilike("%Investment%"), # Or use your root category ID
-        models.Transaction.date >= start_date,
-        models.Transaction.date <= end_date,
-        *user_criteria
-    ).scalar() or 0
+    investment_category = db.query(models.Category).filter(models.Category.name.ilike("%Investment%")) .first()
+    if investment_category:
+        investment_category_ids = get_all_descendant_ids(investment_category.id, db)
+        investment_total = db.query(func.sum(models.Transaction.amount)).filter(
+            models.Transaction.category_id.in_(investment_category_ids),
+            models.Transaction.type.in_([models.TransactionType.EXPENSE, models.TransactionType.TRANSFER]),
+            models.Transaction.date >= start_date,
+            models.Transaction.date <= end_date,
+            *user_criteria
+        ).scalar() or 0
+    else:
+        investment_total = db.query(func.sum(models.Transaction.amount)).join(models.Category).filter(
+            models.Category.name.ilike("%Investment%"),
+            models.Transaction.date >= start_date,
+            models.Transaction.date <= end_date,
+            *user_criteria
+        ).scalar() or 0
 
     # 4. Generate Dynamic Suggestion Logic
     suggestion = "Your cash flow is healthy. Consider increasing your Liquid Fund floor."
