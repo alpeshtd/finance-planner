@@ -444,8 +444,8 @@ export default function HealthCareDiabetes() {
   const readingsSinceNeedleChange = useMemo(() => {
     if (!latestNeedleChange) return allRecords.length;
     const latestChangeTime = parseRecordDateTime(latestNeedleChange);
-    const recentReadings = allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime);
-    return recentReadings.length;
+    console.log('latest after needle change:', allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime));
+    return allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime).length;
   }, [allRecords, latestNeedleChange]);
 
   const needleStatus = useMemo(() => {
