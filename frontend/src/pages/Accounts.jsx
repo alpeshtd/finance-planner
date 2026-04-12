@@ -12,7 +12,8 @@ export default function Accounts() {
 
   const loadData = async () => {
     const data = await accountService.getAll(selectedUserId);
-    setAccounts(data);
+    const sortedData = data.sort((a, b) => a.account_type === 'SAVINGS' && (a.balance > b.balance) ? -1 : 1);
+    setAccounts(sortedData);
   };
 
   const handleDelete = async (accountId, accountName) => {

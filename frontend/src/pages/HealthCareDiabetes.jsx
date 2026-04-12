@@ -195,7 +195,8 @@ export default function HealthCareDiabetes() {
     needleMark: false,
     insulinMark: true,
     fastingMeal: true,
-    breakfastMeal: true,
+    breakfastMeal: false,
+    breakfastReading: false,
     lunchMeal: true,
     dinnerMeal: true,
   });
@@ -444,7 +445,6 @@ export default function HealthCareDiabetes() {
   const readingsSinceNeedleChange = useMemo(() => {
     if (!latestNeedleChange) return allRecords.length;
     const latestChangeTime = parseRecordDateTime(latestNeedleChange);
-    console.log('latest after needle change:', allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime));
     return allRecords.filter((record) => parseRecordDateTime(record) >= latestChangeTime).length;
   }, [allRecords, latestNeedleChange]);
 
@@ -852,6 +852,7 @@ export default function HealthCareDiabetes() {
                   { key: 'deleteIcon', label: 'Delete icon' },
                   { key: 'fastingMeal', label: 'Fasting meal' },
                   { key: 'breakfastMeal', label: 'Breakfast meal' },
+                  { key: 'breakfastReading', label: 'Breakfast reading' },
                   { key: 'lunchMeal', label: 'Lunch meal' },
                   { key: 'dinnerMeal', label: 'Dinner meal' },
                 ].map((option) => (
@@ -883,7 +884,9 @@ export default function HealthCareDiabetes() {
                   {displayOptions.fastingMeal && (
                     <th className="px-3 py-2">Last night meal</th>
                   )}
-                  <th className="px-3 py-2">Breakfast</th>
+                  {displayOptions.breakfastReading && (
+                    <th className="px-3 py-2">Breakfast</th>
+                  )}
                   {displayOptions.breakfastMeal && (
                     <th className="px-3 py-2">Meal</th>
                   )}
@@ -920,7 +923,9 @@ export default function HealthCareDiabetes() {
                       {displayOptions.fastingMeal && (
                         <td className="px-3 py-3 align-top">{renderMealCell(fasting)}</td>
                       )}
-                      <td className="px-3 py-3 align-top">{renderReadingCell(breakfast)}</td>
+                      {displayOptions.breakfastReading && (
+                        <td className="px-3 py-3 align-top">{renderReadingCell(breakfast)}</td>
+                      )}
                       {displayOptions.breakfastMeal && (
                         <td className="px-3 py-3 align-top">{renderMealCell(breakfast)}</td>
                       )}
