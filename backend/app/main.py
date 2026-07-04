@@ -7,30 +7,28 @@ from .api import router as api_router        # adjust to actual modules
 from .db.database import Base, engine
 from .db import models  # ensure models are imported so they are registered with SQLAlchemy
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 # Create tables automatically for local development when Alembic is unavailable.
 Base.metadata.create_all(bind=engine)
 
 
-def ensure_sqlite_schema() -> None:
-    if not str(engine.url).startswith("sqlite"):
+def ensure_baby_movement_schema() -> None:
+    inspector = inspect(engine)
+    if not inspector.has_table("baby_movement_entries"):
+        return
+
+    existing_columns = {column["name"] for column in inspector.get_columns("baby_movement_entries")}
+    if "movement_count" in existing_columns:
         return
 
     with engine.begin() as connection:
-        table_exists = connection.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table' AND name='baby_movement_entries'")
-        ).fetchone()
-        if not table_exists:
-            return
-
-        columns = connection.execute(text("PRAGMA table_info(baby_movement_entries)")).fetchall()
-        existing_columns = {row[1] for row in columns}
-        if "movement_count" not in existing_columns:
-            connection.execute(text("ALTER TABLE baby_movement_entries ADD COLUMN movement_count INTEGER NOT NULL DEFAULT 0"))
+        connection.execute(
+            text("ALTER TABLE baby_movement_entries ADD COLUMN movement_count INTEGER NOT NULL DEFAULT 0")
+        )
 
 
-ensure_sqlite_schema()
+ensure_baby_movement_schema()
 
 try:
     import cloudinary
