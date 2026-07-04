@@ -22,6 +22,9 @@ export default function HealthCare() {
                     <NavLink to="diabetes" className={tabClass}>
                         Diabetes
                     </NavLink>
+                    <NavLink to="baby-movements" className={tabClass}>
+                        Baby Movements
+                    </NavLink>
                 </div>
             </div>
 

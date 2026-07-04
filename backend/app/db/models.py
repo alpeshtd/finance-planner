@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Boolean, Enum
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, ForeignKey, Boolean, Enum, Text
 from sqlalchemy.orm import relationship
 from .database import Base
 import enum
@@ -108,4 +108,18 @@ class DiabetesRecord(Base):
     insulin_action = Column(String, nullable=True)
     insulin_dosage = Column(String, nullable=True)
     needle_changed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class BabyMovementEntry(Base):
+    __tablename__ = "baby_movement_entries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    entry_date = Column(Date, nullable=False)
+    entry_time = Column(String, nullable=False)
+    meal_or_snack = Column(String, nullable=False)
+    movement_count = Column(Integer, nullable=False, default=0)
+    movement_types = Column(Text, nullable=False)
+    other_movement = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

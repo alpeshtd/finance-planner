@@ -38,6 +38,18 @@ export const healthCareServices = {
         const response = await api.post('/diabetes-records/', payload);
         return response.data;
     },
+    getBabyMovementEntries: async () => {
+        const response = await api.get('/baby-movements/');
+        return response.data;
+    },
+    addBabyMovementEntry: async (payload) => {
+        const response = await api.post('/baby-movements/', payload);
+        return response.data;
+    },
+    deleteBabyMovementEntry: async (id) => {
+        const response = await api.delete(`/baby-movements/${id}`);
+        return response.data;
+    },
     deleteDiabetesRecord: async (id) => {
         const response = await api.delete(`/diabetes-records/${id}`);
         return response.data;

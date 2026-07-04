@@ -1,9 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordBearer
 import io
+import json
 import re
-import pdfplumber
 from sqlalchemy.orm import Session
+
+try:
+    import pdfplumber
+except ModuleNotFoundError:  # pragma: no cover - optional dependency in some environments
+    pdfplumber = None
 from sqlalchemy import func, extract, text, cast, String # Added these
 from ..db.database import SessionLocal
 from ..db import models, schemas
@@ -811,6 +816,9 @@ def extract_amounts(parts):
 def parse_transactions(pdf_stream):
     transactions = []
 
+    if pdfplumber is None:
+        return transactions
+
     with pdfplumber.open(pdf_stream) as pdf:
         prev_balance = None  # ✅ track previous balance
 
@@ -897,6 +905,9 @@ def extract_amounts_kotak(parts):
 
 def parse_transactions_kotak(pdf_stream):
     transactions = []
+
+    if pdfplumber is None:
+        return transactions
 
     with pdfplumber.open(pdf_stream) as pdf:
         prev_balance = None  # ✅ track previous balance
@@ -1004,8 +1015,15 @@ async def upload_pdf(file: UploadFile = File(...)):
     }
 
 
-import cloudinary.uploader
-from PyPDF2 import PdfReader, PdfWriter
+try:
+    import cloudinary.uploader
+except ModuleNotFoundError:  # pragma: no cover - optional dependency for medical uploads
+    cloudinary = None
+
+try:
+    from PyPDF2 import PdfReader, PdfWriter
+except ModuleNotFoundError:  # pragma: no cover - optional dependency for medical uploads
+    PdfReader = PdfWriter = None
 
 @router.post("/upload-medical")
 async def upload_medical_report(
@@ -1019,6 +1037,9 @@ async def upload_medical_report(
     crop_pages: str = Form(None),                    # Optional, default to None
     db: Session = Depends(get_db)                    # Don't forget your DB session!
 ):
+    if cloudinary is None or PdfReader is None or PdfWriter is None:
+        raise HTTPException(status_code=503, detail="Medical upload dependencies are not installed.")
+
     if crop_pages is not None:
         try:
             start_page, end_page = map(int, crop_pages.split('-'))
@@ -1138,6 +1159,62 @@ def delete_medical_record(record_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error during deletion: {str(e)}")
+
+
+@router.post("/baby-movements/", response_model=schemas.BabyMovementEntry)
+def create_baby_movement_entry(entry: schemas.BabyMovementEntryCreate, db: Session = Depends(get_db)):
+    new_entry = models.BabyMovementEntry(
+        entry_date=entry.entry_date,
+        entry_time=entry.entry_time,
+        meal_or_snack=entry.meal_or_snack,
+        movement_count=entry.movement_count,
+        movement_types=json.dumps(entry.movement_types),
+        other_movement=entry.other_movement,
+        notes=entry.notes,
+    )
+    db.add(new_entry)
+    db.commit()
+    db.refresh(new_entry)
+    return {
+        "id": new_entry.id,
+        "entry_date": new_entry.entry_date,
+        "entry_time": new_entry.entry_time,
+        "meal_or_snack": new_entry.meal_or_snack,
+        "movement_count": new_entry.movement_count,
+        "movement_types": json.loads(new_entry.movement_types or "[]"),
+        "other_movement": new_entry.other_movement,
+        "notes": new_entry.notes,
+        "created_at": new_entry.created_at,
+    }
+
+
+@router.get("/baby-movements/", response_model=list[schemas.BabyMovementEntry])
+def get_baby_movement_entries(db: Session = Depends(get_db)):
+    entries = db.query(models.BabyMovementEntry).order_by(models.BabyMovementEntry.entry_date.desc(), models.BabyMovementEntry.entry_time.desc()).all()
+    return [
+        {
+            "id": entry.id,
+            "entry_date": entry.entry_date,
+            "entry_time": entry.entry_time,
+            "meal_or_snack": entry.meal_or_snack,
+            "movement_count": entry.movement_count,
+            "movement_types": json.loads(entry.movement_types or "[]"),
+            "other_movement": entry.other_movement,
+            "notes": entry.notes,
+            "created_at": entry.created_at,
+        }
+        for entry in entries
+    ]
+
+
+@router.delete("/baby-movements/{entry_id}")
+def delete_baby_movement_entry(entry_id: int, db: Session = Depends(get_db)):
+    entry = db.query(models.BabyMovementEntry).filter(models.BabyMovementEntry.id == entry_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Baby movement entry not found")
+    db.delete(entry)
+    db.commit()
+    return {"message": "Baby movement entry deleted successfully"}
 
 
 @router.post("/diabetes-records/", response_model=schemas.DiabetesRecord)

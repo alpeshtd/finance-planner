@@ -17,6 +17,7 @@ import HealthCare from './pages/HealthCare.jsx';
 import HealthCareDocuments from './pages/HealthCareDocuments.jsx';
 import HealthCareDiabetes from './pages/HealthCareDiabetes.jsx';
 import HealthCareOverview from './pages/HealthCareOverview.jsx';
+import BabyMovements from './pages/BabyMovements.jsx';
 import Settings from './pages/Settings.jsx';
 import Login from './pages/Login.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
@@ -50,7 +51,8 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <HealthCareOverview /> },
           { path: "documents", element: <HealthCareDocuments /> },
-          { path: "diabetes", element: <HealthCareDiabetes /> }
+          { path: "diabetes", element: <HealthCareDiabetes /> },
+          { path: "baby-movements", element: <BabyMovements /> }
         ]
       },
       { path: "settings", element: <Settings /> }

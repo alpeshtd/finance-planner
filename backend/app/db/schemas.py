@@ -117,3 +117,23 @@ class DiabetesRecord(DiabetesRecordBase):
 
     class Config:
         from_attributes = True
+
+
+class BabyMovementEntryBase(BaseModel):
+    entry_date: date
+    entry_time: str
+    meal_or_snack: str
+    movement_count: int = 0
+    movement_types: List[str]
+    other_movement: Optional[str] = None
+    notes: Optional[str] = None
+
+class BabyMovementEntryCreate(BabyMovementEntryBase):
+    pass
+
+class BabyMovementEntry(BabyMovementEntryBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

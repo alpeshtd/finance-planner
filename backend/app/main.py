@@ -7,18 +7,40 @@ from .api import router as api_router        # adjust to actual modules
 from .db.database import Base, engine
 from .db import models  # ensure models are imported so they are registered with SQLAlchemy
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
-# Schema is now managed by Alembic migrations
-# Base.metadata.create_all(bind=engine)
+# Create tables automatically for local development when Alembic is unavailable.
+Base.metadata.create_all(bind=engine)
 
-import cloudinary
-import cloudinary.uploader
+
+def ensure_sqlite_schema() -> None:
+    if not str(engine.url).startswith("sqlite"):
+        return
+
+    with engine.begin() as connection:
+        table_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='baby_movement_entries'")
+        ).fetchone()
+        if not table_exists:
+            return
+
+        columns = connection.execute(text("PRAGMA table_info(baby_movement_entries)")).fetchall()
+        existing_columns = {row[1] for row in columns}
+        if "movement_count" not in existing_columns:
+            connection.execute(text("ALTER TABLE baby_movement_entries ADD COLUMN movement_count INTEGER NOT NULL DEFAULT 0"))
+
+
+ensure_sqlite_schema()
+
+try:
+    import cloudinary
+    import cloudinary.uploader
+except ModuleNotFoundError:  # pragma: no cover - optional dependency for uploads
+    cloudinary = None
 
 # Load environment variables from backend/.env (for local development)
 load_dotenv()
 
-# Schema is now managed by Alembic migrations
-# Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Finance Planner API")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").strip()
@@ -43,9 +65,10 @@ app.include_router(api_router, prefix="/api")
 
 # add any startup/shutdown events, middleware, etc.
 
-cloudinary.config( 
-    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
-    api_key = os.getenv("CLOUDINARY_API_KEY"), 
-    api_secret = os.getenv("CLOUDINARY_API_SECRET"),
-    secure=True
-)
+if cloudinary is not None:
+    cloudinary.config( 
+        cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+        api_key = os.getenv("CLOUDINARY_API_KEY"), 
+        api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+        secure=True
+    )
