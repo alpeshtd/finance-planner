@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Clock3, HeartPulse, Sparkles, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Clock3, HeartPulse, Sparkles, AlertTriangle, Trash2 } from 'lucide-react';
 import { healthCareServices } from '../services/healthCareServices';
 const movementOptions = [
   'Kick',
@@ -30,6 +30,7 @@ function formatLabel(value) {
 export default function BabyMovements() {
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState(initialForm);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -100,6 +101,21 @@ export default function BabyMovements() {
     } catch (error) {
       console.error('Failed to save baby movement entry', error);
       alert('Unable to save the movement entry right now.');
+    }
+  };
+
+  const handleDeleteEntry = async (id) => {
+    if (!window.confirm('Delete this movement entry?')) return;
+
+    setDeletingId(id);
+    try {
+      await healthCareServices.deleteBabyMovementEntry(id);
+      setEntries((current) => current.filter((entry) => entry.id !== id));
+    } catch (error) {
+      console.error('Failed to delete baby movement entry', error);
+      alert('Unable to delete the movement entry right now.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -373,7 +389,20 @@ export default function BabyMovements() {
                           {entry.movementTypes.length > 0 ? entry.movementTypes.join(', ') : '—'}
                           {entry.otherMovement ? ` • ${entry.otherMovement}` : ''}
                         </td>
-                        <td className="px-2 py-2 text-slate-600">{entry.notes || '—'}</td>
+                        <td className="px-2 py-2 text-slate-600">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="min-w-0 flex-1">{entry.notes || '—'}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEntry(entry.id)}
+                              disabled={deletingId === entry.id}
+                              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label="Delete entry"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </>
