@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Clock3, HeartPulse, Sparkles, AlertTriangle, Trash2 } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { healthCareServices } from '../services/healthCareServices';
 const movementOptions = [
   'Kick',
@@ -25,6 +26,13 @@ function formatLabel(value) {
   if (value === 'yes') return 'Yes';
   if (value === 'no') return 'No';
   return 'Not sure';
+}
+
+function formatChartDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
 export default function BabyMovements() {
@@ -138,18 +146,67 @@ export default function BabyMovements() {
     return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
   }, [entries]);
 
+  const hourlyChartData = useMemo(() => {
+    const totals = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
+
+    entries.forEach((entry) => {
+      const hour = Number(entry.time.slice(0, 2));
+      const count = Number(entry.movementCount ?? 0);
+      if (Number.isFinite(count)) {
+        totals[hour].count += count;
+      }
+    });
+
+    return totals;
+  }, [entries]);
+
+  const dailyChartData = useMemo(() => {
+    const totals = entries.reduce((acc, entry) => {
+      const date = entry.date;
+      const count = Number(entry.movementCount ?? 0);
+      if (!acc[date]) {
+        acc[date] = { date, count: 0 };
+      }
+      if (Number.isFinite(count)) {
+        acc[date].count += count;
+      }
+      return acc;
+    }, {});
+
+    return Object.values(totals).sort((a, b) => a.date.localeCompare(b.date));
+  }, [entries]);
+
+  const sessionChartData = useMemo(() => {
+    const sessionMap = new Map();
+
+    entries.forEach((entry) => {
+      const hour = Number(entry.time.slice(0, 2));
+      const count = Number(entry.movementCount ?? 0);
+      if (!Number.isFinite(count)) return;
+
+      let sessionKey = 'night';
+      if (hour >= 8 && hour < 12) sessionKey = 'morning';
+      else if (hour >= 12 && hour < 16) sessionKey = 'afternoon';
+      else if (hour >= 16 && hour < 20) sessionKey = 'evening';
+
+      const date = entry.date;
+      if (!sessionMap.has(date)) {
+        sessionMap.set(date, { date, morning: 0, afternoon: 0, evening: 0, night: 0 });
+      }
+
+      const dayData = sessionMap.get(date);
+      dayData[sessionKey] += count;
+    });
+
+    return Array.from(sessionMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [entries]);
+
   const analytics = useMemo(() => {
     const totalEntries = entries.length;
     const daysWithEntries = new Set(entries.map((entry) => entry.date)).size;
     const averagePerDay = daysWithEntries > 0 ? (totalEntries / daysWithEntries).toFixed(1) : '0.0';
 
-    const hourCounts = Array.from({ length: 24 }, () => 0);
-    entries.forEach((entry) => {
-      const hour = Number(entry.time.slice(0, 2));
-      hourCounts[hour] += 1;
-    });
-
-    const peakHour = hourCounts.reduce((best, count, hour) => (count > hourCounts[best] ? hour : best), 0);
+    const peakHour = hourlyChartData.reduce((best, current, hour) => (current.count > hourlyChartData[best].count ? hour : best), 0);
     const peakHourLabel = `${String(peakHour).padStart(2, '0')}:00`;
 
     const movementCounts = entries.reduce((acc, entry) => {
@@ -172,10 +229,9 @@ export default function BabyMovements() {
       mealSnackEntries,
       mealSnackShare,
     };
-  }, [entries]);
+  }, [entries, hourlyChartData]);
 
-  const hourValues = Array.from({ length: 24 }, (_, hour) => entries.filter((entry) => Number(entry.time.slice(0, 2)) === hour).length);
-  const maxHourValue = Math.max(1, ...hourValues);
+  const maxHourValue = Math.max(1, ...hourlyChartData.map((item) => item.count));
 
   return (
     <div className="space-y-6">
@@ -185,9 +241,9 @@ export default function BabyMovements() {
           Pregnancy movement tracker
         </div>
         <h2 className="text-xl font-semibold text-slate-800">Track baby movement patterns and spot trends early</h2>
-        <p className="text-sm text-slate-600">
+        {/* <p className="text-sm text-slate-600">
           Record movement timing, whether a snack or meal came before the activity, and any notes that may be useful for your clinician.
-        </p>
+        </p> */}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -302,7 +358,7 @@ export default function BabyMovements() {
               <Sparkles size={16} className="text-amber-500" />
               Quick insights
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-3 grid-cols-2">
               <div className="rounded-2xl bg-slate-50 p-3">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Average per day</p>
                 <p className="mt-1 text-2xl font-semibold text-slate-800">{analytics.averagePerDay}</p>
@@ -326,22 +382,115 @@ export default function BabyMovements() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-700">Activity by hour</h3>
-                <p className="text-xs text-slate-500">A simple pattern view to spot when movement is more frequent.</p>
+                {/* <p className="text-xs text-slate-500">A simple pattern view to spot when movement is more frequent.</p> */}
               </div>
               <div className="rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-pink-700">{analytics.totalEntries} entries</div>
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <div className="flex h-40 min-w-[150px] items-end gap-[1px]">
-                {Array.from({ length: 24 }, (_, hour) => {
-                  const value = hourValues[hour];
-                  const height = value === 0 ? 8 : Math.max(16, Math.round((value / maxHourValue) * 100));
-                  return (
-                    <div key={hour} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                      <div className="w-full rounded-t-full bg-gradient-to-t from-pink-500 to-amber-300" style={{ height: `${height}%` }} />
-                      <span className="text-[10px] text-slate-400">{hour}</span>
-                    </div>
-                  );
-                })}
+            <div className="mt-4 h-56 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={hourlyChartData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="hour"
+                    type="number"
+                    domain={[0, 24]}
+                    ticks={[0, 3, 6, 9, 12, 15, 18, 21, 24]}
+                    tickFormatter={(value) => value.toString()}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: '#64748b' }}
+                    width={28}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(244, 114, 182, 0.12)' }}
+                    formatter={(value) => [`${value} total`, 'Count']}
+                    labelFormatter={(hour) => `Hour ${hour}`}
+                  />
+                  <Bar dataKey="count" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="mt-6">
+              <div className="mb-2">
+                <h4 className="text-sm font-semibold text-slate-700">Daily count trend</h4>
+                <p className="text-xs text-slate-500">Total movement count by date.</p>
+              </div>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dailyChartData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      tickFormatter={formatChartDate}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      width={28}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${value}`, 'Count']}
+                      labelFormatter={(label) => `Date ${label}`}
+                    />
+                    <Line type="monotone" dataKey="count" stroke="#0f766e" strokeWidth={2} dot={{ r: 3, fill: '#0f766e' }} activeDot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="mb-2">
+                <h4 className="text-sm font-semibold text-slate-700">Session trend</h4>
+                {/* <p className="text-xs text-slate-500">Morning, afternoon, evening, and night totals by date.</p> */}
+              </div>
+              <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />Morning (8-12)</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />Afternoon (12-4)</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-violet-500" />Evening (4-8)</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-pink-500" />Night (8-12)</div>
+              </div>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={sessionChartData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      tickFormatter={formatChartDate}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      width={28}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${value}`, 'Count']}
+                      labelFormatter={(label) => `Date ${label}`}
+                    />
+                    <Line type="monotone" dataKey="morning" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="afternoon" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="evening" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="night" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
