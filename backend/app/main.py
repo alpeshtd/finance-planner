@@ -31,6 +31,12 @@ def ensure_baby_movement_schema() -> None:
                 text("ALTER TABLE baby_movement_entries ADD COLUMN meal_type TEXT")
             )
 
+    if "duration" not in existing_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE baby_movement_entries ADD COLUMN duration TEXT")
+            )
+
 
 ensure_baby_movement_schema()
 

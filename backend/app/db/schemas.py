@@ -124,6 +124,7 @@ class BabyMovementEntryBase(BaseModel):
     entry_time: str
     meal_or_snack: str
     meal_type: Optional[str] = None
+    duration: Optional[str] = None
     movement_count: int = 0
     movement_types: List[str]
     other_movement: Optional[str] = None

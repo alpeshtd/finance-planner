@@ -17,6 +17,7 @@ const initialForm = {
   time: new Date().toTimeString().slice(0, 5),
   mealSnack: 'no',
   mealType: '',
+  duration: '',
   movementCount: '0',
   movementTypes: [],
   otherMovement: '',
@@ -53,6 +54,7 @@ export default function BabyMovements() {
           movementCount: entry.movement_count ?? '0',
           movementTypes: entry.movement_types || [],
           mealType: entry.meal_type || '',
+          duration: entry.duration || '',
           otherMovement: entry.other_movement || '',
           notes: entry.notes || '',
         }));
@@ -89,6 +91,7 @@ export default function BabyMovements() {
         entry_time: form.time,
         meal_or_snack: form.mealSnack,
         meal_type: form.mealType.trim() || null,
+        duration: form.duration.trim() || null,
         movement_count: Number(form.movementCount || 0),
         movement_types: form.movementTypes,
         other_movement: form.otherMovement.trim() || null,
@@ -104,6 +107,7 @@ export default function BabyMovements() {
         movementCount: createdEntry.movement_count ?? '0',
         movementTypes: createdEntry.movement_types || [],
         mealType: createdEntry.meal_type || '',
+        duration: createdEntry.duration || '',
         otherMovement: createdEntry.other_movement || '',
         notes: createdEntry.notes || '',
       };
@@ -237,39 +241,49 @@ export default function BabyMovements() {
 
   const mealTypeSummary = useMemo(() => {
     const summaryMap = new Map();
-
+console.log("entries",entries)
     entries.forEach((entry) => {
       const label = entry.mealType?.toLowerCase();
       if (!label || !['breakfast', 'lunch', 'dinner'].includes(label)) return;
 
-      const key = `${entry.date}-${entry.time}`;
-      if (!summaryMap.has(key)) {
-        summaryMap.set(key, {
+      if (!summaryMap.has(entry.date)) {
+        summaryMap.set(entry.date, {
           date: entry.date,
-          time: entry.time,
           breakfast: 0,
           lunch: 0,
           dinner: 0,
         });
       }
 
-      const row = summaryMap.get(key);
+      const row = summaryMap.get(entry.date);
       const count = Number(entry.movementCount ?? 0);
       if (!Number.isFinite(count)) return;
 
-      if (label === 'breakfast') row.breakfast += count;
-      else if (label === 'lunch') row.lunch += count;
-      else if (label === 'dinner') row.dinner += count;
+      if (label === 'breakfast') {
+        row.breakfast += count;
+        row.b_time = entry.time;
+        row.b_duration = entry.duration;
+      }
+      else if (label === 'lunch') {
+        row.lunch += count;
+        row.l_time = entry.time;
+        row.l_duration = entry.duration;
+      }
+      else if (label === 'dinner') {
+        row.dinner += count;
+        row.d_time = entry.time;
+        row.d_duration = entry.duration;
+      }
     });
-
-    return Array.from(summaryMap.values()).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+console.log("summaryMap", summaryMap)
+    return Array.from(summaryMap.values()).sort((a, b) => b.date.localeCompare(a.date));
   }, [entries]);
 
-  const formatDateTimeLabel = (date, time) => {
-    if (!date || !time) return '—';
-    const parsed = new Date(`${date}T${time}`);
-    if (Number.isNaN(parsed.getTime())) return `${date} ${time}`;
-    return `${parsed.toLocaleDateString([], { day: '2-digit', month: '2-digit' })} ${time}`;
+  const formatSummaryDate = (date) => {
+    if (!date) return '—';
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return date;
+    return parsed.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
   };
 
   return (
@@ -338,6 +352,25 @@ export default function BabyMovements() {
               <option value="Breakfast">Breakfast</option>
               <option value="Lunch">Lunch</option>
               <option value="Dinner">Dinner</option>
+            </select>
+          </label>
+
+          <label className="space-y-2 text-sm font-medium text-slate-700">
+            <span>Duration</span>
+            <select
+              name="duration"
+              value={form.duration}
+              onChange={handleChange}
+              className="w-full rounded-2xl border border-slate-200 px-3 py-2"
+            >
+              <option value="">Select duration</option>
+              <option value="10M">10M</option>
+              <option value="15M">15M</option>
+              <option value="20M">20M</option>
+              <option value="30M">30M</option>
+              <option value="45M">45M</option>
+              <option value="1Hr">1Hr</option>
+              <option value="2Hr">2Hr</option>
             </select>
           </label>
 
@@ -563,7 +596,7 @@ export default function BabyMovements() {
             <table className="min-w-full divide-y divide-slate-200 text-xs">
               <thead>
                 <tr className="text-left text-slate-600">
-                  <th className="px-2 py-1.5 font-semibold">Date & Time</th>
+                  <th className="px-2 py-1.5 font-semibold">Date</th>
                   <th className="px-2 py-1.5 font-semibold">Breakfast</th>
                   <th className="px-2 py-1.5 font-semibold">Lunch</th>
                   <th className="px-2 py-1.5 font-semibold">Dinner</th>
@@ -571,11 +604,37 @@ export default function BabyMovements() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {mealTypeSummary.map((row) => (
-                  <tr key={`${row.date}-${row.time}`} className="align-top">
-                    <td className="px-2 py-2 font-medium text-slate-700">{formatDateTimeLabel(row.date, row.time)}</td>
-                    <td className="px-2 py-2 text-slate-700">{row.breakfast}</td>
-                    <td className="px-2 py-2 text-slate-700">{row.lunch}</td>
-                    <td className="px-2 py-2 text-slate-700">{row.dinner}</td>
+                  <tr key={row.date} className="align-top">
+                    <td className="px-2 py-2 font-medium text-slate-700">{formatSummaryDate(row.date)}</td>
+                    <td className="px-2 py-2 text-slate-700">
+                      <div className="font-semibold text-pink-700">{row.breakfast ?? 0}</div>
+                          {(row.b_time || row.b_duration) && (
+                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                              {row.b_time ? `${row.b_time}` : ''}
+                              {row.b_time && row.b_duration ? ' • ' : ''}
+                              {row.b_duration ? `${row.b_duration}` : ''}
+                            </div>
+                          )}</td>
+                    <td className="px-2 py-2 text-slate-700">
+                      <div className="font-semibold text-pink-700">{row.lunch ?? 0}</div>
+                          {(row.l_time || row.l_duration) && (
+                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                              {row.l_time ? `${row.l_time}` : ''}
+                              {row.l_time && row.l_duration ? ' • ' : ''}
+                              {row.l_duration ? `${row.l_duration}` : ''}
+                            </div>
+                          )}
+                    </td>
+                    <td className="px-2 py-2 text-slate-700">
+                      <div className="font-semibold text-pink-700">{row.dinner ?? 0}</div>
+                          {(row.d_time || row.d_duration) && (
+                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                              {row.d_time ? `${row.d_time}` : ''}
+                              {row.d_time && row.d_duration ? ' • ' : ''}
+                              {row.d_duration ? `${row.d_duration}` : ''}
+                            </div>
+                          )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -598,6 +657,7 @@ export default function BabyMovements() {
                 <tr className="text-left text-slate-600">
                   <th className="px-2 py-1.5 font-semibold">Day</th>
                   <th className="px-2 py-1.5 font-semibold">Time</th>
+                  <th className="px-2 py-1.5 font-semibold">Duration</th>
                   <th className="px-2 py-1.5 font-semibold">Count</th>
                   <th className="px-2 py-1.5 font-semibold">Meal/Snack</th>
                   <th className="px-2 py-1.5 font-semibold">Movement Type</th>
@@ -619,6 +679,7 @@ export default function BabyMovements() {
                       <tr key={entry.id} className="align-top">
                         <td className="px-2 py-2 text-slate-400">•</td>
                         <td className="px-2 py-2 text-slate-700">{entry.time}</td>
+                        <td className="px-2 py-2 text-slate-700">{entry.duration || '—'}</td>
                         <td className="px-2 py-2 font-semibold text-pink-700">{entry.movementCount ?? 0}</td>
                         <td className="px-2 py-2 text-slate-700">{formatLabel(entry.mealSnack)}</td>
                         <td className="px-2 py-2 text-slate-700">

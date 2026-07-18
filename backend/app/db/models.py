@@ -119,6 +119,7 @@ class BabyMovementEntry(Base):
     entry_time = Column(String, nullable=False)
     meal_or_snack = Column(String, nullable=False)
     meal_type = Column(String, nullable=True)
+    duration = Column(String, nullable=True)
     movement_count = Column(Integer, nullable=False, default=0)
     movement_types = Column(Text, nullable=False)
     other_movement = Column(String, nullable=True)
