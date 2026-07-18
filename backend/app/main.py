@@ -19,13 +19,17 @@ def ensure_baby_movement_schema() -> None:
         return
 
     existing_columns = {column["name"] for column in inspector.get_columns("baby_movement_entries")}
-    if "movement_count" in existing_columns:
-        return
+    if "movement_count" not in existing_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE baby_movement_entries ADD COLUMN movement_count INTEGER NOT NULL DEFAULT 0")
+            )
 
-    with engine.begin() as connection:
-        connection.execute(
-            text("ALTER TABLE baby_movement_entries ADD COLUMN movement_count INTEGER NOT NULL DEFAULT 0")
-        )
+    if "meal_type" not in existing_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE baby_movement_entries ADD COLUMN meal_type TEXT")
+            )
 
 
 ensure_baby_movement_schema()
