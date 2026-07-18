@@ -188,22 +188,23 @@ export default function BabyMovements() {
     const sessionMap = new Map();
 
     entries.forEach((entry) => {
-      const hour = Number(entry.time.slice(0, 2));
       const count = Number(entry.movementCount ?? 0);
+      const mealType = entry.mealType?.toLowerCase();
       if (!Number.isFinite(count)) return;
 
-      let sessionKey = 'night';
-      if (hour >= 8 && hour < 12) sessionKey = 'morning';
-      else if (hour >= 12 && hour < 16) sessionKey = 'afternoon';
-      else if (hour >= 16 && hour < 20) sessionKey = 'evening';
+      let sessionKey = '';
+      if (mealType === 'breakfast') sessionKey = 'breakfast';
+      else if (mealType === 'lunch') sessionKey = 'lunch';
+      else if (mealType === 'dinner') sessionKey = 'dinner';
 
       const date = entry.date;
       if (!sessionMap.has(date)) {
-        sessionMap.set(date, { date, morning: 0, afternoon: 0, evening: 0, night: 0 });
+        sessionMap.set(date, { date, breakfast: 0, lunch: 0, dinner: 0 });
       }
-
-      const dayData = sessionMap.get(date);
-      dayData[sessionKey] += count;
+      if(sessionKey) {
+        const dayData = sessionMap.get(date);
+        dayData[sessionKey] += count;
+      }
     });
 
     return Array.from(sessionMap.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -440,7 +441,7 @@ console.log("summaryMap", summaryMap)
         </form>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          {/* <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Sparkles size={16} className="text-amber-500" />
               Quick insights
@@ -463,7 +464,7 @@ console.log("summaryMap", summaryMap)
                 <p className="mt-1 text-2xl font-semibold text-slate-800">{analytics.mealSnackShare}%</p>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
@@ -541,13 +542,11 @@ console.log("summaryMap", summaryMap)
             <div className="mt-6">
               <div className="mb-2">
                 <h4 className="text-sm font-semibold text-slate-700">Session trend</h4>
-                {/* <p className="text-xs text-slate-500">Morning, afternoon, evening, and night totals by date.</p> */}
               </div>
               <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />Morning (8-12)</div>
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />Afternoon (12-4)</div>
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-violet-500" />Evening (4-8)</div>
-                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-pink-500" />Night (8-12)</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />Breakfast</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />Lunch</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-violet-500" />Dinner</div>
               </div>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -569,13 +568,12 @@ console.log("summaryMap", summaryMap)
                       width={28}
                     />
                     <Tooltip
-                      formatter={(value) => [`${value}`, 'Count']}
+                      formatter={(value, name) => [`${value}`, `${name.charAt(0).toUpperCase() + name.slice(1)}`]}
                       labelFormatter={(label) => `Date ${label}`}
                     />
-                    <Line type="monotone" dataKey="morning" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="afternoon" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="evening" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="night" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="breakfast" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="lunch" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="dinner" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -600,6 +598,7 @@ console.log("summaryMap", summaryMap)
                   <th className="px-2 py-1.5 font-semibold">Breakfast</th>
                   <th className="px-2 py-1.5 font-semibold">Lunch</th>
                   <th className="px-2 py-1.5 font-semibold">Dinner</th>
+                  <th className="px-2 py-1.5 font-semibold">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -609,7 +608,7 @@ console.log("summaryMap", summaryMap)
                     <td className="px-2 py-2 text-slate-700">
                       <div className="font-semibold text-pink-700">{row.breakfast ?? 0}</div>
                           {(row.b_time || row.b_duration) && (
-                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                            <div className="mt-1 text-[8px] uppercase tracking-wide text-slate-500">
                               {row.b_time ? `${row.b_time}` : ''}
                               {row.b_time && row.b_duration ? ' • ' : ''}
                               {row.b_duration ? `${row.b_duration}` : ''}
@@ -618,7 +617,7 @@ console.log("summaryMap", summaryMap)
                     <td className="px-2 py-2 text-slate-700">
                       <div className="font-semibold text-pink-700">{row.lunch ?? 0}</div>
                           {(row.l_time || row.l_duration) && (
-                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                            <div className="mt-1 text-[8px] uppercase tracking-wide text-slate-500">
                               {row.l_time ? `${row.l_time}` : ''}
                               {row.l_time && row.l_duration ? ' • ' : ''}
                               {row.l_duration ? `${row.l_duration}` : ''}
@@ -628,13 +627,14 @@ console.log("summaryMap", summaryMap)
                     <td className="px-2 py-2 text-slate-700">
                       <div className="font-semibold text-pink-700">{row.dinner ?? 0}</div>
                           {(row.d_time || row.d_duration) && (
-                            <div className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
+                            <div className="mt-1 text-[8px] uppercase tracking-wide text-slate-500">
                               {row.d_time ? `${row.d_time}` : ''}
                               {row.d_time && row.d_duration ? ' • ' : ''}
                               {row.d_duration ? `${row.d_duration}` : ''}
                             </div>
                           )}
                     </td>
+                    <td className="px-2 py-2 font-semibold text-pink-700">{(row.breakfast ?? 0) + (row.lunch ?? 0) + (row.dinner ?? 0)}</td>
                   </tr>
                 ))}
               </tbody>
