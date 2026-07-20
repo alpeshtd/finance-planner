@@ -287,6 +287,25 @@ console.log("summaryMap", summaryMap)
     return parsed.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
   };
 
+  const durationToMin = (val) => {
+    let min = 0;
+    if(!val) return min;
+    if(val.includes('Hr')) {
+      const [hours] = val.split('H');
+      min = Number(hours) * 60;
+    } else {
+      const [minutes] = val.split('M');
+      min = Number(minutes)
+    }
+    return min;
+  }
+
+  const getTotalDuration = (val1, val2, val3) => {
+    const totalMin = durationToMin(val1) + durationToMin(val2) + durationToMin(val3);
+    return totalMin % 60 === 0 ? `${totalMin / 60} Hr` : `${Math.floor(totalMin / 60) === 0 ? '' : Math.floor(totalMin / 60) + 'Hr'} ${totalMin % 60} M`;
+    // return totalMin > 0 ? totalMin < 60 ? `${totalMin} M` : `${(totalMin / 60)} Hr` : '0 M';
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -371,6 +390,7 @@ console.log("summaryMap", summaryMap)
               <option value="30M">30M</option>
               <option value="45M">45M</option>
               <option value="1Hr">1Hr</option>
+              <option value="1.5Hr">1.5Hr</option>
               <option value="2Hr">2Hr</option>
             </select>
           </label>
@@ -634,7 +654,12 @@ console.log("summaryMap", summaryMap)
                             </div>
                           )}
                     </td>
-                    <td className="px-2 py-2 font-semibold text-pink-700">{(row.breakfast ?? 0) + (row.lunch ?? 0) + (row.dinner ?? 0)}</td>
+                    <td className="px-2 py-2 text-slate-700">
+                      <div className="font-semibold text-pink-700">{(row.breakfast ?? 0) + (row.lunch ?? 0) + (row.dinner ?? 0)}</div>
+                      <div className="mt-1 text-[8px] uppercase tracking-wide text-slate-500">
+                              {getTotalDuration(row.d_duration, row.l_duration, row.b_duration)}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
