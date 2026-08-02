@@ -194,11 +194,11 @@ export default function HealthCareDiabetes() {
     time: true,
     needleMark: false,
     insulinMark: true,
-    fastingMeal: true,
+    fastingMeal: false,
     breakfastMeal: false,
-    breakfastReading: false,
-    lunchMeal: true,
-    dinnerMeal: true,
+    breakfastReading: true,
+    lunchMeal: false,
+    dinnerMeal: false,
   });
   const [showDisplayOptions, setShowDisplayOptions] = useState(false);
   const [copyStatus, setCopyStatus] = useState('');
@@ -707,7 +707,7 @@ export default function HealthCareDiabetes() {
           <p className={`mt-2 text-sm ${needleStatus.warning ? 'text-rose-600' : 'text-slate-600'}`}>{needleStatus.label}</p>
           {latestNeedleChange && <p className="mt-3 text-xs text-slate-500">Last needle change: {formatDate(latestNeedleChange.record_date)}</p>}
         </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        {/* <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-900">Insulin status</h3>
           {latestInsulin ? (
             <div className="mt-3 space-y-2 text-sm text-slate-600">
@@ -718,7 +718,7 @@ export default function HealthCareDiabetes() {
           ) : (
             <p className="mt-3 text-sm text-slate-500">No insulin updates recorded yet.</p>
           )}
-        </div>
+        </div> */}
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {['fasting','breakfast','afterLunch','afterDinner'].map((key) => {

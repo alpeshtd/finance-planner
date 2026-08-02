@@ -242,7 +242,6 @@ export default function BabyMovements() {
 
   const mealTypeSummary = useMemo(() => {
     const summaryMap = new Map();
-console.log("entries",entries)
     entries.forEach((entry) => {
       const label = entry.mealType?.toLowerCase();
       if (!label || !['breakfast', 'lunch', 'dinner'].includes(label)) return;
@@ -276,7 +275,6 @@ console.log("entries",entries)
         row.d_duration = entry.duration;
       }
     });
-console.log("summaryMap", summaryMap)
     return Array.from(summaryMap.values()).sort((a, b) => b.date.localeCompare(a.date));
   }, [entries]);
 
@@ -619,6 +617,7 @@ console.log("summaryMap", summaryMap)
                   <th className="px-2 py-1.5 font-semibold">Lunch</th>
                   <th className="px-2 py-1.5 font-semibold">Dinner</th>
                   <th className="px-2 py-1.5 font-semibold">Total</th>
+                  <th className="px-2 py-1.5 font-semibold">Day Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -659,6 +658,9 @@ console.log("summaryMap", summaryMap)
                       <div className="mt-1 text-[8px] uppercase tracking-wide text-slate-500">
                               {getTotalDuration(row.d_duration, row.l_duration, row.b_duration)}
                       </div>
+                    </td>
+                    <td className="px-2 py-2 text-slate-700">
+                      <div className="text-pink-700 opacity-75">{groupedEntries.find((group) => group.date === row.date)?.totalCount ?? 0}</div>
                     </td>
                   </tr>
                 ))}
