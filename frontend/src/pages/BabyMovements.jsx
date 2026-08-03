@@ -41,6 +41,7 @@ export default function BabyMovements() {
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [deletingId, setDeletingId] = useState(null);
+  const [activeRow, setActiveRow] = useState(null);
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -153,6 +154,14 @@ export default function BabyMovements() {
 
     return Object.values(groups).sort((a, b) => b.date.localeCompare(a.date));
   }, [entries]);
+
+  const rowClicked = (data) => {
+    if (activeRow === data) {
+      setActiveRow(null);
+      return;
+    }
+    setActiveRow(data);
+  };
 
   const hourlyChartData = useMemo(() => {
     const totals = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
@@ -694,7 +703,7 @@ export default function BabyMovements() {
               <tbody className="divide-y divide-slate-100">
                 {groupedEntries.map((group) => (
                   <>
-                    <tr key={`${group.date}-summary`} className="bg-slate-50">
+                    <tr key={`${group.date}-summary`} className="bg-slate-50" onClick={() => rowClicked(group.date)}>
                       <td className="px-2 py-2 font-semibold text-slate-800">{group.date}</td>
                       <td colSpan="5" className="px-2 py-2">
                         <span className="inline-flex rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-semibold text-pink-700">
@@ -703,7 +712,7 @@ export default function BabyMovements() {
                       </td>
                     </tr>
                     {group.sessions.map((entry) => (
-                      <tr key={entry.id} className="align-top">
+                      <tr key={entry.id} className="align-top" style={{ display: activeRow === group.date ? 'table-row' : 'none' }}>
                         <td className="px-2 py-2 text-slate-400">•</td>
                         <td className="px-2 py-2 text-slate-700">{entry.time}</td>
                         <td className="px-2 py-2 text-slate-700">{entry.duration || '—'}</td>
