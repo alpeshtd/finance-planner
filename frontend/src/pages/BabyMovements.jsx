@@ -605,7 +605,7 @@ export default function BabyMovements() {
           <CalendarDays size={16} className="text-emerald-600" />
           Meal type summary
         </div>
-        <div className="mt-4 overflow-x-auto" style={{ maxWidth: '69vw' }}>
+        <div className="mt-4 overflow-x-auto" style={{ maxWidth: '69vw', maxHeight: '450px' }}>
           {mealTypeSummary.length === 0 ? (
             <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">No meal-type entries yet. Add a movement entry with a meal type to see the summary.</p>
           ) : (
