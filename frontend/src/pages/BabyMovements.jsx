@@ -244,7 +244,7 @@ export default function BabyMovements() {
     const summaryMap = new Map();
     entries.forEach((entry) => {
       const label = entry.mealType?.toLowerCase();
-      if (!label || !['breakfast', 'lunch', 'dinner'].includes(label)) return;
+      // if (!label || !['breakfast', 'lunch', 'dinner'].includes(label)) return;
 
       if (!summaryMap.has(entry.date)) {
         summaryMap.set(entry.date, {
