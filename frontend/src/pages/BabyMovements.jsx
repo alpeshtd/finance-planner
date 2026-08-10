@@ -164,13 +164,15 @@ export default function BabyMovements() {
   };
 
   const hourlyChartData = useMemo(() => {
-    const totals = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
+    const totals = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, average: 0 }));
 
     entries.forEach((entry) => {
       const hour = Number(entry.time.slice(0, 2));
       const count = Number(entry.movementCount ?? 0);
+      const average = Number.isFinite(count) ? count : 0;
       if (Number.isFinite(count)) {
         totals[hour].count += count;
+        totals[hour].average = totals[hour].count / (totals[hour].count / average);
       }
     });
 
@@ -524,10 +526,13 @@ export default function BabyMovements() {
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(244, 114, 182, 0.12)' }}
-                    formatter={(value) => [`${value} total`, 'Count']}
+                    formatter={(value, name, props) => {
+                      const { count } = props.payload;
+                      return [`${value} (${count})`, 'Avg'];
+                    }}
                     labelFormatter={(hour) => `Hour ${hour}`}
                   />
-                  <Bar dataKey="count" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="average" fill="#ec4899" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
