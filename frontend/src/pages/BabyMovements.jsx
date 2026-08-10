@@ -179,7 +179,7 @@ export default function BabyMovements() {
         totals[hour].count += count;
         totals[hour].samples += 1;
         totals[hour].average =
-          (totals[hour].count / totals[hour].samples).toFixed(1).at(0) === '0' ? Number((totals[hour].count / totals[hour].samples).toFixed(1)) : Number((totals[hour].count / totals[hour].samples).toFixed(1));
+          (totals[hour].count / totals[hour].samples).toFixed(1);
       } else {
         totals[hour].count = 0;
         totals[hour].samples = 0
@@ -230,6 +230,35 @@ export default function BabyMovements() {
 
     return Array.from(sessionMap.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [entries]);
+
+  const sessionMovingAverageChartData = useMemo(() => {
+    const sessionKeys = ['breakfast', 'lunch', 'dinner'];
+    const runningTotals = {
+      breakfast: { sum: 0, validDays: 0 },
+      lunch: { sum: 0, validDays: 0 },
+      dinner: { sum: 0, validDays: 0 },
+    };
+
+    return sessionChartData.map((day) => {
+      const row = { date: day.date };
+
+      sessionKeys.forEach((sessionKey) => {
+        const rawValue = Number(day[sessionKey] ?? 0);
+
+        if (Number.isFinite(rawValue) && rawValue > 0) {
+          runningTotals[sessionKey].sum += rawValue;
+          runningTotals[sessionKey].validDays += 1;
+
+          const avg = runningTotals[sessionKey].sum / runningTotals[sessionKey].validDays;
+          row[`${sessionKey}Average`] = Number(avg.toFixed(1));
+        } else {
+          row[`${sessionKey}Average`] = null;
+        }
+      });
+
+      return row;
+    });
+  }, [sessionChartData]);
 
   const analytics = useMemo(() => {
     const totalEntries = entries.length;
@@ -616,6 +645,47 @@ export default function BabyMovements() {
                     <Line type="monotone" dataKey="breakfast" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                     <Line type="monotone" dataKey="lunch" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
                     <Line type="monotone" dataKey="dinner" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="mb-2">
+                <h4 className="text-sm font-semibold text-slate-700">Session average trend</h4>
+                <p className="text-xs text-slate-500">Average of all valid recent session counts, day by day, ignoring zero activity days.</p>
+              </div>
+              <div className="mb-3 flex flex-wrap gap-3 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />Breakfast avg</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />Lunch avg</div>
+                <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-violet-500" />Dinner avg</div>
+              </div>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={sessionMovingAverageChartData} margin={{ top: 8, right: 4, left: -8, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      tickFormatter={formatChartDate}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: '#64748b' }}
+                      width={28}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [`${value}`, `${name.replace('Average', '')}`]}
+                      labelFormatter={(label) => `Date ${label}`}
+                    />
+                    <Line type="monotone" dataKey="breakfastAverage" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    <Line type="monotone" dataKey="lunchAverage" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    <Line type="monotone" dataKey="dinnerAverage" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
