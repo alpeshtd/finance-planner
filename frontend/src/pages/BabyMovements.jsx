@@ -164,15 +164,25 @@ export default function BabyMovements() {
   };
 
   const hourlyChartData = useMemo(() => {
-    const totals = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, average: 0 }));
+    const totals = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      count: 0,
+      average: 0,
+      samples: 0,
+    }));
 
     entries.forEach((entry) => {
       const hour = Number(entry.time.slice(0, 2));
       const count = Number(entry.movementCount ?? 0);
-      const average = Number.isFinite(count) ? count : 0;
+
       if (Number.isFinite(count)) {
         totals[hour].count += count;
-        totals[hour].average = totals[hour].count / (totals[hour].count / average);
+        totals[hour].samples += 1;
+        totals[hour].average =
+          (totals[hour].count / totals[hour].samples).toFixed(1).at(0) === '0' ? Number((totals[hour].count / totals[hour].samples).toFixed(1)) : Number((totals[hour].count / totals[hour].samples).toFixed(1));
+      } else {
+        totals[hour].count = 0;
+        totals[hour].samples = 0
       }
     });
 
